@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const authenticate = require("../middlewares/auth");
+const { authenticate, authorize } = require("../middlewares/auth");
 const {
   register,
   login,
@@ -136,7 +136,7 @@ router.post("/login", login);
  *       401:
  *         description: Unauthorized
  */
-router.get("/profile", authenticate, getProfile);
+router.get("/profile", authenticate, authorize("donor"), getProfile);
 
 /**
  * @swagger
@@ -171,7 +171,7 @@ router.get("/profile", authenticate, getProfile);
  *       401:
  *         description: Unauthorized
  */
-router.put("/profile", authenticate, updateProfile);
+router.put("/profile", authenticate, authorize("donor"), updateProfile);
 
 /**
  * @swagger
@@ -201,6 +201,6 @@ router.put("/profile", authenticate, updateProfile);
  *       401:
  *         description: Unauthorized
  */
-router.put("/availability", authenticate, updateAvailability);
+router.put("/availability", authenticate, authorize("donor"), updateAvailability);
 
 module.exports = router;

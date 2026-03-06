@@ -64,7 +64,7 @@ const login = async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { donorId: donor.donorId, phone: donor.phone },
+      { id: donor.donorId, role: "donor" },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -78,7 +78,7 @@ const login = async (req, res, next) => {
 const getProfile = async (req, res, next) => {
   try {
     const donor = await prisma.donor.findUnique({
-      where: { donorId: req.donor.donorId },
+      where: { donorId: req.user.id },
     });
 
     if (!donor) {
@@ -107,7 +107,7 @@ const updateProfile = async (req, res, next) => {
     }
 
     const donor = await prisma.donor.update({
-      where: { donorId: req.donor.donorId },
+      where: { donorId: req.user.id },
       data,
     });
 
@@ -126,7 +126,7 @@ const updateAvailability = async (req, res, next) => {
     }
 
     const donor = await prisma.donor.update({
-      where: { donorId: req.donor.donorId },
+      where: { donorId: req.user.id },
       data: { available },
     });
 

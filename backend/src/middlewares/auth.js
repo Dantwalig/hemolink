@@ -12,11 +12,22 @@ const authenticate = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.donor = decoded;
+    req.user = decoded;
     next();
   } catch (err) {
     return error(res, "Invalid or expired token.", 401);
   }
 };
 
-module.exports = authenticate;
+// Restrict access by role. Supported roles: "donor", "hospital"
+// Usage: authorize("donor") or authorize("hospital") or authorize("donor", "hospital")
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return error(res, "Forbidden. You do not have access to this resource.", 403);
+    }
+    next();
+  };
+};
+
+module.exports = { authenticate, authorize };
