@@ -1,2 +1,4 @@
 # ide files/folders
 .vscode
+.claude
+.cursor
