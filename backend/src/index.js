@@ -23,7 +23,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Routes
 app.use("/api", routes);
 
-// Error handler (must be last)
+// Error handler
 app.use(errorHandler);
 
 app.listen(PORT, () => {

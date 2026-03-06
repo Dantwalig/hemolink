@@ -6,3 +6,103 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Hospital {
+  hospitalId Int    @id @default(autoincrement()) @map("hospital_id")
+  name       String
+  phone      String
+  latitude   Float
+  longitude  Float
+
+  bloodRequests BloodRequest[]
+  inventory     Inventory[]
+
+  @@map("hospitals")
+}
+
+model BloodType {
+  bloodTypeCode String @id @map("blood_type_code")
+
+  donors        Donor[]
+  inventory     Inventory[]
+  bloodRequests BloodRequest[]
+
+  @@map("blood_types")
+}
+
+model Donor {
+  donorId       Int     @id @default(autoincrement()) @map("donor_id")
+  fullName      String  @map("full_name")
+  phone         String  @unique
+  password      String
+  bloodTypeCode String  @map("blood_type_code")
+  latitude      Float
+  longitude     Float
+  available     Boolean @default(true)
+  consentSms    Boolean @map("consent_sms")
+
+  bloodType     BloodType      @relation(fields: [bloodTypeCode], references: [bloodTypeCode])
+  notifications Notification[]
+
+  @@map("donors")
+}
+
+model Inventory {
+  inventoryId    Int    @id @default(autoincrement()) @map("inventory_id")
+  hospitalId     Int    @map("hospital_id")
+  bloodTypeCode  String @map("blood_type_code")
+  unitsAvailable Int    @map("units_available")
+
+  hospital  Hospital  @relation(fields: [hospitalId], references: [hospitalId])
+  bloodType BloodType @relation(fields: [bloodTypeCode], references: [bloodTypeCode])
+
+  @@map("inventory")
+}
+
+model RequestStatus {
+  statusCode String @id @map("status_code")
+
+  bloodRequests BloodRequest[]
+
+  @@map("request_status")
+}
+
+model NotificationStatus {
+  deliveryStatusCode String @id @map("delivery_status_code")
+
+  notifications Notification[]
+
+  @@map("notification_status")
+}
+
+model BloodRequest {
+  requestId     Int      @id @default(autoincrement()) @map("request_id")
+  hospitalId    Int      @map("hospital_id")
+  bloodTypeCode String   @map("blood_type_code")
+  unitsNeeded   Int      @map("units_needed")
+  urgencyLevel  String   @map("urgency_level")
+  statusCode    String   @map("status_code")
+  neededBy      DateTime @map("needed_by")
+
+  hospital      Hospital       @relation(fields: [hospitalId], references: [hospitalId])
+  bloodType     BloodType      @relation(fields: [bloodTypeCode], references: [bloodTypeCode])
+  requestStatus RequestStatus  @relation(fields: [statusCode], references: [statusCode])
+  notifications Notification[]
+
+  @@map("blood_requests")
+}
+
+model Notification {
+  notificationId     Int      @id @default(autoincrement()) @map("notification_id")
+  requestId          Int      @map("request_id")
+  donorId            Int      @map("donor_id")
+  sentAt             DateTime @map("sent_at")
+  deliveryStatusCode String   @map("delivery_status_code")
+  responseStatus     String   @map("response_status")
+
+  bloodRequest       BloodRequest       @relation(fields: [requestId], references: [requestId])
+  donor              Donor              @relation(fields: [donorId], references: [donorId])
+  notificationStatus NotificationStatus @relation(fields: [deliveryStatusCode], references: [deliveryStatusCode])
+
+  @@map("notifications")
+}
