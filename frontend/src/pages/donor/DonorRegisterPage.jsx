@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../utils/api.js";
+import api from "../../utils/api";
 
-/* Validators */
+/* validators */
 const validators = {
   fullName(value) {
     if (!value.trim()) return "Full name is required.";
@@ -101,9 +101,24 @@ export default function DonorRegisterPage() {
   const [form, setForm] = useState({
     fullName: "", phone: "", email: "", bloodType: "",
     password: "", confirmPassword: "", available: true, consentSms: false,
+    latitude: null, longitude: null,
   });
+  const [locationStatus, setLocationStatus] = useState("idle"); // idle | loading | granted | denied
   const [errors,  setErrors]  = useState({});
   const [touched, setTouched] = useState({});
+
+  // Get donor's GPS location for geospatial matching
+  const getLocation = () => {
+    if (!navigator.geolocation) { setLocationStatus("denied"); return; }
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((f) => ({ ...f, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
+        setLocationStatus("granted");
+      },
+      () => setLocationStatus("denied")
+    );
+  };
 
   const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -149,15 +164,15 @@ export default function DonorRegisterPage() {
     setLoading(true);
     setServerError("");
     try {
-      // api.js handles baseURL ('/api') automatically
+      // POST /api/donors/register — field names must match backend exactly
       await api.post("/donors/register", {
-        full_name:           form.fullName,
-        phone:               form.phone,
-        email:               form.email,
-        blood_type_code:     form.bloodType,
-        password:            form.password,
-        availability_status: form.available ? "Available" : "Unavailable",
-        consent_sms:         form.consentSms,
+        fullName:      form.fullName,
+        phone:         form.phone,
+        password:      form.password,
+        bloodTypeCode: form.bloodType,
+        latitude:      form.latitude,
+        longitude:     form.longitude,
+        consentSms:    form.consentSms,
       });
       setDone(true);
     } catch (err) {
@@ -267,6 +282,26 @@ export default function DonorRegisterPage() {
                 </Field>
               </div>
 
+              {/* Location picker — required for geospatial matching */}
+              <div style={styles.availRow}>
+                <div>
+                  <div style={styles.availLabel}> Share your location</div>
+                  <div style={styles.availSub}>
+                    {locationStatus === "idle"    && "Required so hospitals can find nearby donors."}
+                    {locationStatus === "loading" && "Getting your location…"}
+                    {locationStatus === "granted" && ` Saved (${form.latitude?.toFixed(4)}, ${form.longitude?.toFixed(4)})`}
+                    {locationStatus === "denied"  && " Location denied. Please enable in browser."}
+                  </div>
+                </div>
+                {locationStatus !== "granted" && (
+                  <button type="button"
+                    style={{ ...styles.btnOutline, marginTop: 0, padding: "8px 16px", fontSize: 13 }}
+                    onClick={getLocation} disabled={locationStatus === "loading"}>
+                    {locationStatus === "loading" ? "Locating…" : "Allow"}
+                  </button>
+                )}
+              </div>
+
               <div style={styles.availRow}>
                 <div>
                   <div style={styles.availLabel}>Currently available to donate?</div>
@@ -294,13 +329,13 @@ export default function DonorRegisterPage() {
             <div>
               <Field label="Password" required error={touched.password && errors.password}
                 helper={!errors.password ? "Min 8 chars · 1 uppercase · 1 number" : ""}>
-                <InputField icon="🔒" type="password" value={form.password} placeholder="Create a strong password"
+                <InputField icon="" type="password" value={form.password} placeholder="Create a strong password"
                   onChange={(e) => set("password", e.target.value)} onBlur={() => touch("password")}
                   error={touched.password && errors.password} autoComplete="new-password" />
               </Field>
 
               <Field label="Confirm Password" required error={touched.confirmPassword && errors.confirmPassword}>
-                <InputField icon="🔒" type="password" value={form.confirmPassword} placeholder="Re-enter your password"
+                <InputField icon="" type="password" value={form.confirmPassword} placeholder="Re-enter your password"
                   onChange={(e) => set("confirmPassword", e.target.value)} onBlur={() => touch("confirmPassword")}
                   error={touched.confirmPassword && errors.confirmPassword} autoComplete="new-password" />
               </Field>

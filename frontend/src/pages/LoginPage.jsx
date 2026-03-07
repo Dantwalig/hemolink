@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../utils/api.js";
-import { useAuth } from "../utils/AuthContext.jsx";
+import api from "../utils/api";
+import { useAuth } from "../utils/AuthContext";
 
-/* Validators */
+/* validators */
 const validators = {
   phone(value) {
     if (!value.trim()) return "Phone number is required.";
@@ -90,14 +90,14 @@ export default function LoginPage() {
     setServerError("");
     try {
       // api.js handles baseURL ('/api') and JWT header automatically
-      const res = await api.post("/auth/login", {
+      // POST /api/donors/login
+      const res = await api.post("/donors/login", {
         phone:    form.phone,
         password: form.password,
       });
       // AuthContext saves token + user to localStorage
-      login(res.data.user, res.data.token);
-      // Redirect based on role from backend
-      navigate(res.data.user?.role === "donor" ? "/donor/dashboard" : "/");
+      login(res.data.donor, res.data.token);
+      navigate("/donor/dashboard");
     } catch (err) {
       setServerError(err.response?.data?.message || "Login failed. Check your credentials.");
     } finally {
@@ -110,7 +110,8 @@ export default function LoginPage() {
     if (err) { setErrors((e) => ({ ...e, phone: err })); setTouched((t) => ({ ...t, phone: true })); return; }
     setLoading(true);
     try {
-      await api.post("/auth/forgot-password", { phone: form.phone });
+      // Not yet available in backend — silently handle
+      // await api.post("/donors/forgot-password", { phone: form.phone });
     } catch {
       // Silently fail — don't reveal if number is registered
     } finally {
