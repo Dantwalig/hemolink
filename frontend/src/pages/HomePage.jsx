@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <div style={styles.page}>
 
-      {/* HEADER */}
+      {/* Header */}
       <header style={styles.header}>
         <div style={styles.logo}>
           <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
@@ -20,7 +20,7 @@ export default function HomePage() {
         </nav>
       </header>
 
-      {/* ── HERO ── */}
+      {/* Hero */}
       <section style={styles.hero}>
         <div style={styles.heroContent}>
           <div style={styles.badge}>
@@ -55,7 +55,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── STATS ── */}
+      {/* Stats */}
       <section style={styles.stats}>
         {[
           { num: "86K",   label: "Units collected per year" },
@@ -70,7 +70,7 @@ export default function HomePage() {
         ))}
       </section>
 
-      {/* ── HOW IT WORKS ── */}
+      {/* How it works */}
       <section style={styles.section}>
         <h2 style={styles.sectionTitle}>How HemoLink Works</h2>
         <p style={styles.sectionSub}>Three steps from emergency request to donor response.</p>
@@ -90,7 +90,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
+      {/* CTA */}
       <section style={styles.cta}>
         <h2 style={styles.ctaTitle}>Ready to save lives?</h2>
         <p style={styles.ctaSub}>Join Rwanda's emergency blood donor network today.</p>
@@ -99,7 +99,7 @@ export default function HomePage() {
         </button>
       </section>
 
-      {/* ── FOOTER ── */}
+      {/* Footer */}
       <footer style={styles.footer}>
         <span>© 2026 HemoLink Rwanda · Built for Rwanda Biomedical Centre</span>
         <span>Kigali, Rwanda</span>
@@ -108,7 +108,7 @@ export default function HomePage() {
   );
 }
 
-/* ── STYLES ── */
+/* Styles */
 const styles = {
   page:       { fontFamily: "'DM Sans', sans-serif", background: "#FDF6EE", minHeight: "100vh", display: "flex", flexDirection: "column", color: "#1C1C1C" },
 
