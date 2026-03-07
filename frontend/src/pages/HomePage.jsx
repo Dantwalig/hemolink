@@ -76,9 +76,9 @@ export default function HomePage() {
         <p style={styles.sectionSub}>Three steps from emergency request to donor response.</p>
         <div style={styles.steps}>
           {[
-            { icon: "🏥", step: "1", title: "Hospital Requests Blood", desc: "A hospital submits an urgent blood request through their dashboard, specifying blood type, units needed, and urgency level." },
-            { icon: "📡", step: "2", title: "System Matches Donors",   desc: "HemoLink's geospatial engine finds compatible donors nearby using the Haversine formula and filters by availability." },
-            { icon: "📱", step: "3", title: "Donors Get SMS Alerts",   desc: "Matched donors receive an SMS within 60 seconds. They confirm or decline. The hospital tracks responses in real time." },
+            { icon: "", step: "1", title: "Hospital Requests Blood", desc: "A hospital submits an urgent blood request through their dashboard, specifying blood type, units needed, and urgency level." },
+            { icon: "", step: "2", title: "System Matches Donors",   desc: "HemoLink's geospatial engine finds compatible donors nearby using the Haversine formula and filters by availability." },
+            { icon: "", step: "3", title: "Donors Get SMS Alerts",   desc: "Matched donors receive an SMS within 60 seconds. They confirm or decline. The hospital tracks responses in real time." },
           ].map((s) => (
             <div key={s.step} style={styles.stepCard}>
               <div style={styles.stepIcon}>{s.icon}</div>

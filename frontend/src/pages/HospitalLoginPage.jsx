@@ -57,7 +57,7 @@ function InputField({ icon, type = "text", value, onChange, onBlur, error, place
       />
       {isPassword && (
         <button type="button" style={styles.togglePw} onClick={() => setShowPw((s) => !s)}>
-          {showPw ? "🙈" : "👁️"}
+          {showPw ? "" : ""}
         </button>
       )}
     </div>
@@ -145,7 +145,7 @@ export default function HospitalLoginPage() {
           {/* Back to home */}
           <button style={styles.backLink} onClick={() => navigate("/")}>← Back to Home</button>
 
-          <div style={styles.hospitalIcon}>🏥</div>
+          <div style={styles.hospitalIcon}></div>
           <h1 style={styles.leftTitle}>Hospital <em style={styles.leftEm}>Staff Portal</em></h1>
           <p style={styles.leftDesc}>
             Access your hospital dashboard to submit emergency blood requests,
@@ -191,7 +191,7 @@ export default function HospitalLoginPage() {
           <Field label="Hospital ID" required error={touched.hospitalId && errors.hospitalId}
             helper="Assigned by Rwanda Biomedical Centre">
             <InputField
-              icon="🏥" value={form.hospitalId} placeholder="e.g. CHUK-001"
+              icon="" value={form.hospitalId} placeholder="e.g. CHUK-001"
               onChange={(e) => set("hospitalId", e.target.value)}
               onBlur={() => touch("hospitalId")}
               error={touched.hospitalId && errors.hospitalId}
@@ -202,7 +202,7 @@ export default function HospitalLoginPage() {
           {/* Email */}
           <Field label="Staff Email" required error={touched.email && errors.email}>
             <InputField
-              icon="✉️" type="email" value={form.email} placeholder="staff@hospital.rw"
+              icon="" type="email" value={form.email} placeholder="staff@hospital.rw"
               onChange={(e) => set("email", e.target.value)}
               onBlur={() => touch("email")}
               error={touched.email && errors.email}
@@ -213,7 +213,7 @@ export default function HospitalLoginPage() {
           {/* Password */}
           <Field label="Password" required error={touched.password && errors.password}>
             <InputField
-              icon="🔒" type="password" value={form.password} placeholder="Your password"
+              icon="" type="password" value={form.password} placeholder="Your password"
               onChange={(e) => set("password", e.target.value)}
               onBlur={() => touch("password")}
               error={touched.password && errors.password}
@@ -234,7 +234,7 @@ export default function HospitalLoginPage() {
 
           {/* Access request note */}
           <div style={styles.accessNote}>
-            <span style={styles.accessNoteIcon}>ℹ️</span>
+            <span style={styles.accessNoteIcon}></span>
             <span>
               Don't have credentials?{" "}
               <a href="mailto:hemolink@rbc.gov.rw" style={styles.accessLink}>

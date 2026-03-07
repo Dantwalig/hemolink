@@ -54,7 +54,7 @@ function InputField({ icon, type = "text", value, onChange, onBlur, error, place
       />
       {isPassword && (
         <button type="button" style={styles.togglePw} onClick={() => setShowPw((s) => !s)}>
-          {showPw ? "🙈" : "👁️"}
+          {showPw ? "" : ""}
         </button>
       )}
     </div>
@@ -193,7 +193,7 @@ export default function LoginPage() {
           {/* Phone */}
           <Field label="Phone Number" required error={touched.phone && errors.phone} helper="Rwanda number e.g. 0788123456">
             <InputField
-              icon="📞" value={form.phone} placeholder="0788 123 456"
+              icon="" value={form.phone} placeholder="0788 123 456"
               onChange={(e) => set("phone", e.target.value)}
               onBlur={() => touch("phone")}
               error={touched.phone && errors.phone}
@@ -204,7 +204,7 @@ export default function LoginPage() {
           {/* Password */}
           <Field label="Password" required error={touched.password && errors.password}>
             <InputField
-              icon="🔒" type="password" value={form.password} placeholder="Your password"
+              icon="" type="password" value={form.password} placeholder="Your password"
               onChange={(e) => set("password", e.target.value)}
               onBlur={() => touch("password")}
               error={touched.password && errors.password}
