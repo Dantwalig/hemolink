@@ -47,7 +47,7 @@ export default function DonorRespondPage() {
     }
   };
 
-  /* ── LOADING ── */
+  /* Loading */
   if (status === "loading") return (
     <div style={styles.centeredPage}>
       <div style={styles.loadingSpinner} />
@@ -55,27 +55,27 @@ export default function DonorRespondPage() {
     </div>
   );
 
-  /* ── ERROR ── */
+  /* Error */
   if (status === "error") return (
     <div style={styles.centeredPage}>
-      <div style={{ fontSize: 56, marginBottom: 20 }}>❌</div>
+      <div style={{ fontSize: 56, marginBottom: 20 }}></div>
       <h2 style={styles.stateTitle}>Invalid Request</h2>
       <p style={styles.stateDesc}>This link is invalid or has already been used. Make sure you copied the full link from your SMS.</p>
       <button style={styles.btnOutline} onClick={() => navigate("/login")}>Go to Donor Login</button>
     </div>
   );
 
-  /* ── EXPIRED ── */
+  /* Expired */
   if (status === "expired") return (
     <div style={styles.centeredPage}>
-      <div style={{ fontSize: 56, marginBottom: 20 }}>⏰</div>
+      <div style={{ fontSize: 56, marginBottom: 20 }}></div>
       <h2 style={styles.stateTitle}>Request Expired</h2>
       <p style={styles.stateDesc}>This blood request has already been fulfilled or the response window has closed. Thank you for being a registered donor.</p>
       <button style={styles.btnOutline} onClick={() => navigate("/login")}>Go to My Dashboard</button>
     </div>
   );
 
-  /* ── SUCCESS ── */
+  /* Success */
   if (status === "success") return (
     <div style={styles.centeredPage}>
       <div style={{ fontSize: 56, marginBottom: 20 }}>{response === "Accepted" ? "✅" : "🙏"}</div>
@@ -87,7 +87,7 @@ export default function DonorRespondPage() {
       </p>
       {response === "Accepted" && (
         <div style={styles.hospitalCard}>
-          <span style={{ fontSize: 28 }}>🏥</span>
+          <span style={{ fontSize: 28 }}></span>
           <div>
             <div style={styles.hospitalCardName}>{requestData?.hospital_name}</div>
             <div style={styles.hospitalCardSub}>Please arrive as soon as possible · Mention HemoLink</div>
@@ -98,7 +98,7 @@ export default function DonorRespondPage() {
     </div>
   );
 
-  /* ── MAIN VIEW ── */
+  /* Main View */
   const urgencyColor = { Critical: "#C0392B", High: "#E67E22", Medium: "#F1C40F", Low: "#1E8449" }[requestData?.urgency_level] || "#C0392B";
   const neededBy     = requestData?.needed_by
     ? new Date(requestData.needed_by).toLocaleString("en-RW", { dateStyle: "medium", timeStyle: "short" })
@@ -126,11 +126,11 @@ export default function DonorRespondPage() {
 
           <div style={styles.detailsGrid}>
             {[
-              { label: "Hospital",         value: `🏥 ${requestData?.hospital_name}` },
-              { label: "Blood Type Needed", value: `🩸 ${requestData?.blood_type_code}`, red: true },
+              { label: "Hospital",         value: ` ${requestData?.hospital_name}` },
+              { label: "Blood Type Needed", value: ` ${requestData?.blood_type_code}`, red: true },
               { label: "Units Needed",      value: `${requestData?.units_needed} unit(s)` },
-              { label: "Distance from You", value: `📍 ${requestData?.distance_km} km away` },
-              { label: "Needed By",         value: `⏰ ${neededBy}` },
+              { label: "Distance from You", value: ` ${requestData?.distance_km} km away` },
+              { label: "Needed By",         value: ` ${neededBy}` },
               { label: "Urgency Level",     value: requestData?.urgency_level, urgency: true },
             ].map((d) => (
               <div key={d.label} style={styles.detailItem}>
@@ -157,7 +157,7 @@ export default function DonorRespondPage() {
           </div>
 
           <p style={styles.noteText}>
-            ℹ️ Your response will be sent to the hospital immediately. If you accept, please go to the hospital as soon as possible and mention HemoLink at reception.
+            Your response will be sent to the hospital immediately. If you accept, please go to the hospital as soon as possible and mention HemoLink at reception.
           </p>
         </div>
       </div>

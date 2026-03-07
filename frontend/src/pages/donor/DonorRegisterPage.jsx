@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api.js";
 
-/* ── VALIDATORS ── */
+/* Validators */
 const validators = {
   fullName(value) {
     if (!value.trim()) return "Full name is required.";
@@ -69,7 +69,7 @@ function InputField({ icon, type = "text", value, onChange, onBlur, error, place
       />
       {isPassword && (
         <button type="button" style={styles.togglePw} onClick={() => setShowPw((s) => !s)}>
-          {showPw ? "🙈" : "👁️"}
+          {showPw ? "" : ""}
         </button>
       )}
     </div>
@@ -194,10 +194,10 @@ export default function DonorRegisterPage() {
           </p>
           <div style={styles.infoList}>
             {[
-              { icon: "🩸", text: "All 8 blood types accepted" },
-              { icon: "📱", text: "SMS alerts — no app needed" },
-              { icon: "📍", text: "Matched by proximity to hospital" },
-              { icon: "🔒", text: "Your data is private & secure" },
+              { icon: ">", text: "All 8 blood types accepted" },
+              { icon: ">", text: "SMS alerts — no app needed" },
+              { icon: ">", text: "Matched by proximity to hospital" },
+              { icon: ">", text: "Your data is private & secure" },
             ].map((item) => (
               <div key={item.text} style={styles.infoItem}>
                 <span style={styles.infoIcon}>{item.icon}</span>
@@ -241,24 +241,24 @@ export default function DonorRegisterPage() {
             <div>
               <div style={styles.fieldRow}>
                 <Field label="Full Name" required error={touched.fullName && errors.fullName}>
-                  <InputField icon="👤" value={form.fullName} placeholder="Jean Claude Niyomugabo"
+                  <InputField icon="" value={form.fullName} placeholder="Jean Claude Niyomugabo"
                     onChange={(e) => set("fullName", e.target.value)} onBlur={() => touch("fullName")}
                     error={touched.fullName && errors.fullName} autoComplete="name" />
                 </Field>
                 <Field label="Phone Number" required error={touched.phone && errors.phone} helper="e.g. 0788123456">
-                  <InputField icon="📞" value={form.phone} placeholder="0788 123 456"
+                  <InputField icon="" value={form.phone} placeholder="0788 123 456"
                     onChange={(e) => set("phone", e.target.value)} onBlur={() => touch("phone")}
                     error={touched.phone && errors.phone} autoComplete="tel" />
                 </Field>
               </div>
               <div style={styles.fieldRow}>
                 <Field label="Email Address" error={touched.email && errors.email} helper="Optional — for account recovery">
-                  <InputField icon="✉️" type="email" value={form.email} placeholder="jean@example.com"
+                  <InputField icon="" type="email" value={form.email} placeholder="jean@example.com"
                     onChange={(e) => set("email", e.target.value)} onBlur={() => touch("email")}
                     error={touched.email && errors.email} autoComplete="email" />
                 </Field>
                 <Field label="Blood Type" required error={touched.bloodType && errors.bloodType}>
-                  <SelectField icon="🩸" value={form.bloodType}
+                  <SelectField icon="" value={form.bloodType}
                     onChange={(e) => set("bloodType", e.target.value)} onBlur={() => touch("bloodType")}
                     error={touched.bloodType && errors.bloodType}>
                     <option value="">Select blood type</option>

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
 import { useAuth } from "../utils/AuthContext.jsx";
 
-/* ── VALIDATORS ── */
+/* Validators */
 const validators = {
   phone(value) {
     if (!value.trim()) return "Phone number is required.";
@@ -44,7 +44,7 @@ function InputField({ icon, type = "text", value, onChange, onBlur, error, place
       />
       {isPassword && (
         <button type="button" style={styles.togglePw} onClick={() => setShowPw((s) => !s)}>
-          {showPw ? "🙈" : "👁️"}
+          {showPw ? "" : ""}
         </button>
       )}
     </div>
@@ -150,13 +150,13 @@ export default function LoginPage() {
           {forgotSent  && <div style={{ ...styles.alert, ...styles.alertSuccess }}>✅ If your number is registered, you'll receive an SMS with reset instructions.</div>}
 
           <Field label="Phone Number" required error={touched.phone && errors.phone} helper="e.g. 0788123456">
-            <InputField icon="📞" value={form.phone} placeholder="0788 123 456"
+            <InputField icon="" value={form.phone} placeholder="0788 123 456"
               onChange={(e) => set("phone", e.target.value)} onBlur={() => touch("phone")}
               error={touched.phone && errors.phone} autoComplete="tel" />
           </Field>
 
           <Field label="Password" required error={touched.password && errors.password}>
-            <InputField icon="🔒" type="password" value={form.password} placeholder="Your password"
+            <InputField icon="" type="password" value={form.password} placeholder="Your password"
               onChange={(e) => set("password", e.target.value)} onBlur={() => touch("password")}
               error={touched.password && errors.password} autoComplete="current-password" />
           </Field>
