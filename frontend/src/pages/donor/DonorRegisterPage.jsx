@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
 
-/* validators */
 const validators = {
   fullName(value) {
     if (!value.trim()) return "Full name is required.";
@@ -14,11 +13,6 @@ const validators = {
     if (!value.trim()) return "Phone number is required.";
     const cleaned = value.replace(/[\s\-]/g, "");
     if (!/^(\+?250|0)[7][2389]\d{7}$/.test(cleaned)) return "Enter a valid Rwanda phone number (e.g. 0788123456).";
-    return "";
-  },
-  email(value) {
-    if (!value.trim()) return "";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email address.";
     return "";
   },
   bloodType(value) {
@@ -48,7 +42,7 @@ function Field({ label, required, error, helper, children }) {
     <div style={styles.field}>
       <label style={styles.label}>{label}{required && <span style={styles.required}> *</span>}</label>
       {children}
-      {error && <span style={styles.errorMsg}>⚠ {error}</span>}
+      {error  && <span style={styles.errorMsg}>⚠ {error}</span>}
       {!error && helper && <span style={styles.helperMsg}>{helper}</span>}
     </div>
   );
@@ -69,7 +63,7 @@ function InputField({ icon, type = "text", value, onChange, onBlur, error, place
       />
       {isPassword && (
         <button type="button" style={styles.togglePw} onClick={() => setShowPw((s) => !s)}>
-          {showPw ? "" : ""}
+          {showPw ? "🙈" : "👁"}
         </button>
       )}
     </div>
@@ -99,15 +93,16 @@ export default function DonorRegisterPage() {
   const [serverError, setServerError] = useState("");
 
   const [form, setForm] = useState({
-    fullName: "", phone: "", email: "", bloodType: "",
+    fullName: "", phone: "", bloodType: "",
     password: "", confirmPassword: "", available: true, consentSms: false,
     latitude: null, longitude: null,
   });
-  const [locationStatus, setLocationStatus] = useState("idle"); // idle | loading | granted | denied
+  const [locationStatus, setLocationStatus] = useState("idle");
   const [errors,  setErrors]  = useState({});
   const [touched, setTouched] = useState({});
 
-  // Get donor's GPS location for geospatial matching
+  const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
   const getLocation = () => {
     if (!navigator.geolocation) { setLocationStatus("denied"); return; }
     setLocationStatus("loading");
@@ -119,8 +114,6 @@ export default function DonorRegisterPage() {
       () => setLocationStatus("denied")
     );
   };
-
-  const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
   const set = (field, val) => {
     setForm((f) => ({ ...f, [field]: val }));
@@ -141,7 +134,7 @@ export default function DonorRegisterPage() {
   };
 
   const validateStep1 = () => {
-    const fields = ["fullName", "phone", "email", "bloodType"];
+    const fields = ["fullName", "phone", "bloodType"];
     const errs   = Object.fromEntries(fields.map((f) => [f, validators[f]?.(form[f]) ?? ""]));
     setErrors((e) => ({ ...e, ...errs }));
     setTouched((t) => ({ ...t, ...Object.fromEntries(fields.map((f) => [f, true])) }));
@@ -164,14 +157,15 @@ export default function DonorRegisterPage() {
     setLoading(true);
     setServerError("");
     try {
-      // POST /api/donors/register — field names must match backend exactly
+      // FIX #12: backend wraps response — use res.data.data if needed, but register
+      // doesn't auto-login so we just check success
       await api.post("/donors/register", {
         fullName:      form.fullName,
         phone:         form.phone,
         password:      form.password,
         bloodTypeCode: form.bloodType,
-        latitude:      form.latitude,
-        longitude:     form.longitude,
+        latitude:      form.latitude  ?? 0,
+        longitude:     form.longitude ?? 0,
         consentSms:    form.consentSms,
       });
       setDone(true);
@@ -198,7 +192,6 @@ export default function DonorRegisterPage() {
 
   return (
     <div style={styles.page}>
-      {/* Left Panel */}
       <div style={styles.leftPanel}>
         <div style={styles.leftInner}>
           <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
@@ -209,21 +202,20 @@ export default function DonorRegisterPage() {
           </p>
           <div style={styles.infoList}>
             {[
-              { icon: ">", text: "All 8 blood types accepted" },
-              { icon: ">", text: "SMS alerts — no app needed" },
-              { icon: ">", text: "Matched by proximity to hospital" },
-              { icon: ">", text: "Your data is private & secure" },
-            ].map((item) => (
-              <div key={item.text} style={styles.infoItem}>
-                <span style={styles.infoIcon}>{item.icon}</span>
-                <span style={styles.infoText}>{item.text}</span>
+              "All 8 blood types accepted",
+              "SMS alerts — no app needed",
+              "Matched by proximity to hospital",
+              "Your data is private & secure",
+            ].map((text) => (
+              <div key={text} style={styles.infoItem}>
+                <span style={styles.infoIcon}>✓</span>
+                <span style={styles.infoText}>{text}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Right Panel */}
       <div style={styles.rightPanel}>
         <div style={styles.formBox}>
           <div style={styles.logoRow}>
@@ -234,7 +226,6 @@ export default function DonorRegisterPage() {
           <h2 style={styles.formTitle}>Create donor account</h2>
           <p style={styles.formSub}>Join Rwanda's emergency blood donor network.</p>
 
-          {/* Progress bar */}
           <div style={styles.progressBar}>
             <div style={styles.progressStep}>
               <div style={{ ...styles.stepCircle, ...(step > 1 ? styles.stepDone : styles.stepActive) }}>
@@ -251,46 +242,38 @@ export default function DonorRegisterPage() {
 
           {serverError && <div style={{ ...styles.alert, ...styles.alertError }}>❌ {serverError}</div>}
 
-          {/* STEP 1 */}
           {step === 1 && (
             <div>
               <div style={styles.fieldRow}>
                 <Field label="Full Name" required error={touched.fullName && errors.fullName}>
-                  <InputField icon="" value={form.fullName} placeholder="Jean Claude Niyomugabo"
+                  <InputField icon="👤" value={form.fullName} placeholder="Jean Claude Niyomugabo"
                     onChange={(e) => set("fullName", e.target.value)} onBlur={() => touch("fullName")}
                     error={touched.fullName && errors.fullName} autoComplete="name" />
                 </Field>
                 <Field label="Phone Number" required error={touched.phone && errors.phone} helper="e.g. 0788123456">
-                  <InputField icon="" value={form.phone} placeholder="0788 123 456"
+                  <InputField icon="📱" value={form.phone} placeholder="0788 123 456"
                     onChange={(e) => set("phone", e.target.value)} onBlur={() => touch("phone")}
                     error={touched.phone && errors.phone} autoComplete="tel" />
                 </Field>
               </div>
-              <div style={styles.fieldRow}>
-                <Field label="Email Address" error={touched.email && errors.email} helper="Optional — for account recovery">
-                  <InputField icon="" type="email" value={form.email} placeholder="jean@example.com"
-                    onChange={(e) => set("email", e.target.value)} onBlur={() => touch("email")}
-                    error={touched.email && errors.email} autoComplete="email" />
-                </Field>
-                <Field label="Blood Type" required error={touched.bloodType && errors.bloodType}>
-                  <SelectField icon="" value={form.bloodType}
-                    onChange={(e) => set("bloodType", e.target.value)} onBlur={() => touch("bloodType")}
-                    error={touched.bloodType && errors.bloodType}>
-                    <option value="">Select blood type</option>
-                    {bloodTypes.map((bt) => <option key={bt} value={bt}>{bt}</option>)}
-                  </SelectField>
-                </Field>
-              </div>
 
-              {/* Location picker — required for geospatial matching */}
+              <Field label="Blood Type" required error={touched.bloodType && errors.bloodType}>
+                <SelectField icon="🩸" value={form.bloodType}
+                  onChange={(e) => set("bloodType", e.target.value)} onBlur={() => touch("bloodType")}
+                  error={touched.bloodType && errors.bloodType}>
+                  <option value="">Select blood type</option>
+                  {bloodTypes.map((bt) => <option key={bt} value={bt}>{bt}</option>)}
+                </SelectField>
+              </Field>
+
               <div style={styles.availRow}>
                 <div>
-                  <div style={styles.availLabel}> Share your location</div>
+                  <div style={styles.availLabel}>📍 Share your location</div>
                   <div style={styles.availSub}>
                     {locationStatus === "idle"    && "Required so hospitals can find nearby donors."}
                     {locationStatus === "loading" && "Getting your location…"}
-                    {locationStatus === "granted" && ` Saved (${form.latitude?.toFixed(4)}, ${form.longitude?.toFixed(4)})`}
-                    {locationStatus === "denied"  && " Location denied. Please enable in browser."}
+                    {locationStatus === "granted" && `✅ Saved (${form.latitude?.toFixed(4)}, ${form.longitude?.toFixed(4)})`}
+                    {locationStatus === "denied"  && "⚠ Location denied. Please enable in browser."}
                   </div>
                 </div>
                 {locationStatus !== "granted" && (
@@ -324,18 +307,17 @@ export default function DonorRegisterPage() {
             </div>
           )}
 
-          {/* STEP 2 */}
           {step === 2 && (
             <div>
               <Field label="Password" required error={touched.password && errors.password}
                 helper={!errors.password ? "Min 8 chars · 1 uppercase · 1 number" : ""}>
-                <InputField icon="" type="password" value={form.password} placeholder="Create a strong password"
+                <InputField icon="🔒" type="password" value={form.password} placeholder="Create a strong password"
                   onChange={(e) => set("password", e.target.value)} onBlur={() => touch("password")}
                   error={touched.password && errors.password} autoComplete="new-password" />
               </Field>
 
               <Field label="Confirm Password" required error={touched.confirmPassword && errors.confirmPassword}>
-                <InputField icon="" type="password" value={form.confirmPassword} placeholder="Re-enter your password"
+                <InputField icon="🔒" type="password" value={form.confirmPassword} placeholder="Re-enter your password"
                   onChange={(e) => set("confirmPassword", e.target.value)} onBlur={() => touch("confirmPassword")}
                   error={touched.confirmPassword && errors.confirmPassword} autoComplete="new-password" />
               </Field>
@@ -379,7 +361,7 @@ const styles = {
   leftDesc:       { fontSize: 15, color: "rgba(255,255,255,0.82)", lineHeight: 1.75, marginBottom: 36 },
   infoList:       { display: "flex", flexDirection: "column", gap: 14 },
   infoItem:       { display: "flex", alignItems: "center", gap: 12 },
-  infoIcon:       { width: 36, height: 36, background: "rgba(255,255,255,0.15)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 },
+  infoIcon:       { width: 36, height: 36, background: "rgba(255,255,255,0.15)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, color: "#fff", fontWeight: 700 },
   infoText:       { fontSize: 14, color: "rgba(255,255,255,0.85)" },
   rightPanel:     { flex: 1, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: "48px", overflowY: "auto" },
   formBox:        { width: "100%", maxWidth: 480 },
@@ -407,7 +389,7 @@ const styles = {
   helperMsg:      { fontSize: 12, color: "#6B6B6B" },
   inputWrap:      { position: "relative", display: "flex", alignItems: "center" },
   inputIcon:      { position: "absolute", left: 13, fontSize: 15, pointerEvents: "none", zIndex: 1 },
-  input:          { width: "100%", padding: "11px 14px 11px 38px", border: "1.5px solid #DDD5D0", borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1C1C1C", outline: "none", transition: "border-color 0.2s" },
+  input:          { width: "100%", padding: "11px 14px 11px 38px", border: "1.5px solid #DDD5D0", borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1C1C1C", outline: "none", transition: "border-color 0.2s", boxSizing: "border-box" },
   togglePw:       { position: "absolute", right: 12, background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4 },
   availRow:       { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", background: "#F0E8DF", borderRadius: 10, marginBottom: 16 },
   availLabel:     { fontSize: 13, fontWeight: 500, color: "#1C1C1C" },
@@ -423,7 +405,7 @@ const styles = {
   btnOutline:     { padding: "13px 24px", background: "transparent", color: "#C0392B", border: "2px solid #C0392B", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", marginTop: 4 },
   btnDisabled:    { background: "#ccc", cursor: "not-allowed" },
   btnRow:         { display: "flex", gap: 12 },
-  spinner:        { width: 18, height: 18, border: "2.5px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" },
+  spinner:        { width: 18, height: 18, border: "2.5px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block" },
   switchLink:     { textAlign: "center", fontSize: 13, color: "#6B6B6B", marginTop: 18 },
   linkBtn:        { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 13 },
   successBox:     { textAlign: "center", padding: "60px 40px", maxWidth: 480 },

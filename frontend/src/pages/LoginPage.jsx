@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { useAuth } from "../utils/AuthContext";
 
-/* validators */
 const validators = {
   phone(value) {
     if (!value.trim()) return "Phone number is required.";
@@ -23,7 +22,7 @@ function Field({ label, required, error, helper, children }) {
     <div style={styles.field}>
       <label style={styles.label}>{label}{required && <span style={styles.required}> *</span>}</label>
       {children}
-      {error && <span style={styles.errorMsg}>⚠ {error}</span>}
+      {error  && <span style={styles.errorMsg}>⚠ {error}</span>}
       {!error && helper && <span style={styles.helperMsg}>{helper}</span>}
     </div>
   );
@@ -44,7 +43,7 @@ function InputField({ icon, type = "text", value, onChange, onBlur, error, place
       />
       {isPassword && (
         <button type="button" style={styles.togglePw} onClick={() => setShowPw((s) => !s)}>
-          {showPw ? "" : ""}
+          {showPw ? "🙈" : "👁"}
         </button>
       )}
     </div>
@@ -64,24 +63,19 @@ export default function LoginPage() {
 
   const set = (field, val) => {
     setForm((f) => ({ ...f, [field]: val }));
-    if (touched[field]) {
-      const err = validators[field]?.(val) ?? "";
-      setErrors((e) => ({ ...e, [field]: err }));
-    }
+    if (touched[field]) setErrors((e) => ({ ...e, [field]: validators[field]?.(val) ?? "" }));
   };
 
   const touch = (field) => {
     setTouched((t) => ({ ...t, [field]: true }));
-    const err = validators[field]?.(form[field]) ?? "";
-    setErrors((e) => ({ ...e, [field]: err }));
+    setErrors((e) => ({ ...e, [field]: validators[field]?.(form[field]) ?? "" }));
   };
 
   const validateAll = () => {
-    const phoneErr    = validators.phone(form.phone);
-    const passwordErr = validators.password(form.password);
-    setErrors({ phone: phoneErr, password: passwordErr });
+    const errs = { phone: validators.phone(form.phone), password: validators.password(form.password) };
+    setErrors(errs);
     setTouched({ phone: true, password: true });
-    return !phoneErr && !passwordErr;
+    return !Object.values(errs).some(Boolean);
   };
 
   const handleLogin = async () => {
@@ -89,14 +83,11 @@ export default function LoginPage() {
     setLoading(true);
     setServerError("");
     try {
-      // api.js handles baseURL ('/api') and JWT header automatically
-      // POST /api/donors/login
-      const res = await api.post("/donors/login", {
-        phone:    form.phone,
-        password: form.password,
-      });
-      // AuthContext saves token + user to localStorage
-      login(res.data.donor, res.data.token);
+      const res = await api.post("/donors/login", { phone: form.phone, password: form.password });
+      // FIX #2: backend wraps response in { success, message, data }
+      // so donor and token live at res.data.data, not res.data
+      const { donor, token } = res.data.data;
+      login({ ...donor, role: "donor" }, token);
       navigate("/donor/dashboard");
     } catch (err) {
       setServerError(err.response?.data?.message || "Login failed. Check your credentials.");
@@ -108,21 +99,11 @@ export default function LoginPage() {
   const handleForgot = async () => {
     const err = validators.phone(form.phone);
     if (err) { setErrors((e) => ({ ...e, phone: err })); setTouched((t) => ({ ...t, phone: true })); return; }
-    setLoading(true);
-    try {
-      // Not yet available in backend — silently handle
-      // await api.post("/donors/forgot-password", { phone: form.phone });
-    } catch {
-      // Silently fail — don't reveal if number is registered
-    } finally {
-      setLoading(false);
-      setForgotSent(true);
-    }
+    setForgotSent(true); // SMS reset not yet implemented in backend — silently acknowledge
   };
 
   return (
     <div style={styles.page}>
-      {/* Left Panel */}
       <div style={styles.leftPanel}>
         <div style={styles.leftInner}>
           <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
@@ -141,7 +122,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Panel */}
       <div style={styles.rightPanel}>
         <div style={styles.formBox}>
           <h2 style={styles.formTitle}>Donor Login</h2>
@@ -151,13 +131,13 @@ export default function LoginPage() {
           {forgotSent  && <div style={{ ...styles.alert, ...styles.alertSuccess }}>✅ If your number is registered, you'll receive an SMS with reset instructions.</div>}
 
           <Field label="Phone Number" required error={touched.phone && errors.phone} helper="e.g. 0788123456">
-            <InputField icon="" value={form.phone} placeholder="0788 123 456"
+            <InputField icon="📱" value={form.phone} placeholder="0788 123 456"
               onChange={(e) => set("phone", e.target.value)} onBlur={() => touch("phone")}
               error={touched.phone && errors.phone} autoComplete="tel" />
           </Field>
 
           <Field label="Password" required error={touched.password && errors.password}>
-            <InputField icon="" type="password" value={form.password} placeholder="Your password"
+            <InputField icon="🔒" type="password" value={form.password} placeholder="Your password"
               onChange={(e) => set("password", e.target.value)} onBlur={() => touch("password")}
               error={touched.password && errors.password} autoComplete="current-password" />
           </Field>
@@ -184,40 +164,40 @@ export default function LoginPage() {
 }
 
 const styles = {
-  page:         { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" },
-  leftPanel:    { flex: 1, background: "#C0392B", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 48px" },
-  leftInner:    { maxWidth: 420 },
-  logoDrop:     { width: 48, height: 48, background: "rgba(255,255,255,0.2)", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 32 },
-  logoDropText: { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 18 },
-  leftTitle:    { fontSize: 36, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 16 },
-  leftEm:       { fontStyle: "italic", fontWeight: 400, color: "rgba(255,255,255,0.75)" },
-  leftDesc:     { fontSize: 15, color: "rgba(255,255,255,0.82)", lineHeight: 1.75, marginBottom: 36 },
-  leftCard:     { background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "flex-start", gap: 14 },
-  leftCardTitle:{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 },
-  leftCardSub:  { fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 },
-  rightPanel:   { flex: 1, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 48px" },
-  formBox:      { width: "100%", maxWidth: 420 },
-  formTitle:    { fontSize: 26, fontWeight: 800, color: "#1C1C1C", marginBottom: 6 },
-  formSub:      { fontSize: 14, color: "#6B6B6B", marginBottom: 28, lineHeight: 1.5 },
-  field:        { display: "flex", flexDirection: "column", gap: 6, marginBottom: 18 },
-  label:        { fontSize: 13, fontWeight: 500, color: "#1C1C1C" },
-  required:     { color: "#C0392B" },
-  errorMsg:     { fontSize: 12, color: "#C0392B" },
-  helperMsg:    { fontSize: 12, color: "#6B6B6B" },
-  inputWrap:    { position: "relative", display: "flex", alignItems: "center" },
-  inputIcon:    { position: "absolute", left: 13, fontSize: 15, pointerEvents: "none", zIndex: 1 },
-  input:        { width: "100%", padding: "11px 14px 11px 38px", border: "1.5px solid #DDD5D0", borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1C1C1C", outline: "none", transition: "border-color 0.2s" },
-  togglePw:     { position: "absolute", right: 12, background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4 },
-  alert:        { padding: "12px 16px", borderRadius: 9, fontSize: 13.5, marginBottom: 20, lineHeight: 1.5 },
-  alertSuccess: { background: "#EAFAF1", color: "#1E8449", border: "1px solid #A9DFBF" },
-  alertError:   { background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A" },
-  submitBtn:    { width: "100%", padding: 13, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 },
+  page:           { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" },
+  leftPanel:      { flex: 1, background: "#C0392B", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 48px" },
+  leftInner:      { maxWidth: 420 },
+  logoDrop:       { width: 48, height: 48, background: "rgba(255,255,255,0.2)", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 32 },
+  logoDropText:   { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 18 },
+  leftTitle:      { fontSize: 36, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 16 },
+  leftEm:         { fontStyle: "italic", fontWeight: 400, color: "rgba(255,255,255,0.75)" },
+  leftDesc:       { fontSize: 15, color: "rgba(255,255,255,0.82)", lineHeight: 1.75, marginBottom: 36 },
+  leftCard:       { background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "flex-start", gap: 14 },
+  leftCardTitle:  { fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 },
+  leftCardSub:    { fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 },
+  rightPanel:     { flex: 1, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 48px" },
+  formBox:        { width: "100%", maxWidth: 420 },
+  formTitle:      { fontSize: 26, fontWeight: 800, color: "#1C1C1C", marginBottom: 6 },
+  formSub:        { fontSize: 14, color: "#6B6B6B", marginBottom: 28, lineHeight: 1.5 },
+  field:          { display: "flex", flexDirection: "column", gap: 6, marginBottom: 18 },
+  label:          { fontSize: 13, fontWeight: 500, color: "#1C1C1C" },
+  required:       { color: "#C0392B" },
+  errorMsg:       { fontSize: 12, color: "#C0392B" },
+  helperMsg:      { fontSize: 12, color: "#6B6B6B" },
+  inputWrap:      { position: "relative", display: "flex", alignItems: "center" },
+  inputIcon:      { position: "absolute", left: 13, fontSize: 15, pointerEvents: "none", zIndex: 1 },
+  input:          { width: "100%", padding: "11px 14px 11px 38px", border: "1.5px solid #DDD5D0", borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1C1C1C", outline: "none", transition: "border-color 0.2s", boxSizing: "border-box" },
+  togglePw:       { position: "absolute", right: 12, background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4 },
+  alert:          { padding: "12px 16px", borderRadius: 9, fontSize: 13.5, marginBottom: 20, lineHeight: 1.5 },
+  alertSuccess:   { background: "#EAFAF1", color: "#1E8449", border: "1px solid #A9DFBF" },
+  alertError:     { background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A" },
+  submitBtn:      { width: "100%", padding: 13, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 },
   submitDisabled: { background: "#ccc", cursor: "not-allowed" },
-  forgotLink:   { background: "none", border: "none", color: "#C0392B", fontSize: 12, fontWeight: 500, cursor: "pointer", textAlign: "right", width: "100%", marginTop: -8, marginBottom: 14, display: "block" },
-  spinner:      { width: 18, height: 18, border: "2.5px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" },
-  divider:      { display: "flex", alignItems: "center", gap: 12, margin: "20px 0" },
-  dividerLine:  { flex: 1, border: "none", borderTop: "1px solid #DDD5D0" },
-  dividerText:  { fontSize: 12, color: "#6B6B6B", whiteSpace: "nowrap" },
-  switchLink:   { textAlign: "center", fontSize: 13, color: "#6B6B6B", marginTop: 10 },
-  linkBtn:      { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 13 },
+  forgotLink:     { background: "none", border: "none", color: "#C0392B", fontSize: 12, fontWeight: 500, cursor: "pointer", textAlign: "right", width: "100%", marginTop: -8, marginBottom: 14, display: "block" },
+  spinner:        { width: 18, height: 18, border: "2.5px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block" },
+  divider:        { display: "flex", alignItems: "center", gap: 12, margin: "20px 0" },
+  dividerLine:    { flex: 1, border: "none", borderTop: "1px solid #DDD5D0" },
+  dividerText:    { fontSize: 12, color: "#6B6B6B", whiteSpace: "nowrap" },
+  switchLink:     { textAlign: "center", fontSize: 13, color: "#6B6B6B", marginTop: 10 },
+  linkBtn:        { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 13 },
 };

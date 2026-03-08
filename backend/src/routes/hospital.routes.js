@@ -1,5 +1,6 @@
 const { Router } = require("express");
-const { register, login } = require("../controllers/hospital.controller");
+const { authenticate, authorize } = require("../middlewares/auth");
+const { register, login, getProfile } = require("../controllers/hospital.controller");
 
 const router = Router();
 
@@ -144,5 +145,27 @@ router.post("/register", register);
  *         description: Invalid phone or password
  */
 router.post("/login", login);
+
+/**
+ * @swagger
+ * /api/hospitals/profile:
+ *   get:
+ *     summary: Get the logged-in hospital profile
+ *     description: |
+ *       Returns the profile of the currently authenticated hospital.
+ *       This route is protected and requires a valid JWT token.
+ *       Access is restricted to users with the hospital role.
+ *     tags: [Hospitals]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Hospital profile retrieved successfully
+ *       401:
+ *         description: Unauthorized - missing or invalid token
+ *       403:
+ *         description: Forbidden - user is not authorized as a hospital
+ */
+router.get("/profile", authenticate, authorize("hospital"), getProfile);
 
 module.exports = router;
