@@ -72,7 +72,7 @@ const router = Router();
  *                 example: "King Faisal Hospital"
  *               phone:
  *                 type: string
- *                 example: "0788100001"
+ *                 example: "0788100021"
  *               email:
  *                 type: string
  *                 example: "kfh@hemolink.rw"
