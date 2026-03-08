@@ -49,7 +49,7 @@ export default function HomePage() {
           <div style={styles.heroCard}>
             <div style={styles.heroCardLabel}>Blood needed urgently</div>
             <div style={styles.heroCardType}>O+</div>
-            <div style={styles.heroCardLocation}>📍 Kigali University Hospital</div>
+            <div style={styles.heroCardLocation}> Kigali University Hospital</div>
             <div style={styles.heroCardTime}>Alert sent &lt;60 seconds ago</div>
           </div>
         </div>
