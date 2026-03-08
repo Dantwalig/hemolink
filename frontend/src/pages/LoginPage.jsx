@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
-import { useAuth } from "../context/AuthContext";
+import api from "../utils/api";
+import { useAuth } from "../utils/AuthContext";
 
-/* ── VALIDATORS ── */
+/* validators */
 const validators = {
   phone(value) {
     if (!value.trim()) return "Phone number is required.";
@@ -44,7 +44,7 @@ function InputField({ icon, type = "text", value, onChange, onBlur, error, place
       />
       {isPassword && (
         <button type="button" style={styles.togglePw} onClick={() => setShowPw((s) => !s)}>
-          {showPw ? "🙈" : "👁️"}
+          {showPw ? "" : ""}
         </button>
       )}
     </div>
@@ -90,14 +90,14 @@ export default function LoginPage() {
     setServerError("");
     try {
       // api.js handles baseURL ('/api') and JWT header automatically
-      const res = await api.post("/auth/login", {
+      // POST /api/donors/login
+      const res = await api.post("/donors/login", {
         phone:    form.phone,
         password: form.password,
       });
       // AuthContext saves token + user to localStorage
-      login(res.data.user, res.data.token);
-      // Redirect based on role from backend
-      navigate(res.data.user?.role === "donor" ? "/donor/dashboard" : "/");
+      login(res.data.donor, res.data.token);
+      navigate("/donor/dashboard");
     } catch (err) {
       setServerError(err.response?.data?.message || "Login failed. Check your credentials.");
     } finally {
@@ -110,7 +110,8 @@ export default function LoginPage() {
     if (err) { setErrors((e) => ({ ...e, phone: err })); setTouched((t) => ({ ...t, phone: true })); return; }
     setLoading(true);
     try {
-      await api.post("/auth/forgot-password", { phone: form.phone });
+      // Not yet available in backend — silently handle
+      // await api.post("/donors/forgot-password", { phone: form.phone });
     } catch {
       // Silently fail — don't reveal if number is registered
     } finally {
@@ -150,13 +151,13 @@ export default function LoginPage() {
           {forgotSent  && <div style={{ ...styles.alert, ...styles.alertSuccess }}>✅ If your number is registered, you'll receive an SMS with reset instructions.</div>}
 
           <Field label="Phone Number" required error={touched.phone && errors.phone} helper="e.g. 0788123456">
-            <InputField icon="📞" value={form.phone} placeholder="0788 123 456"
+            <InputField icon="" value={form.phone} placeholder="0788 123 456"
               onChange={(e) => set("phone", e.target.value)} onBlur={() => touch("phone")}
               error={touched.phone && errors.phone} autoComplete="tel" />
           </Field>
 
           <Field label="Password" required error={touched.password && errors.password}>
-            <InputField icon="🔒" type="password" value={form.password} placeholder="Your password"
+            <InputField icon="" type="password" value={form.password} placeholder="Your password"
               onChange={(e) => set("password", e.target.value)} onBlur={() => touch("password")}
               error={touched.password && errors.password} autoComplete="current-password" />
           </Field>

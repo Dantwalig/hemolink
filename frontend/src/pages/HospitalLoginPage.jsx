@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
-import { useAuth } from "../context/AuthContext";
+import api from "../utils/api.js";
+import { useAuth } from "../utils/AuthContext.jsx";
 
-/* ── VALIDATORS ── */
+/* Validators */
 const validators = {
   hospitalId(value) {
     if (!value.trim()) return "Hospital ID is required.";
@@ -47,7 +47,7 @@ function InputField({ icon, type = "text", value, onChange, onBlur, error, place
       />
       {isPassword && (
         <button type="button" style={styles.togglePw} onClick={() => setShowPw((s) => !s)}>
-          {showPw ? "🙈" : "👁️"}
+          {showPw ? "" : ""}
         </button>
       )}
     </div>
@@ -117,7 +117,7 @@ export default function HospitalLoginPage() {
       <div style={styles.leftPanel}>
         <div style={styles.leftInner}>
           <button style={styles.backLink} onClick={() => navigate("/")}>← Back to Home</button>
-          <div style={{ fontSize: 52, marginBottom: 20 }}>🏥</div>
+          <div style={{ fontSize: 52, marginBottom: 20 }}></div>
           <h1 style={styles.leftTitle}>Hospital <em style={styles.leftEm}>Staff Portal</em></h1>
           <p style={styles.leftDesc}>
             Access your hospital dashboard to submit emergency blood requests,
@@ -125,10 +125,10 @@ export default function HospitalLoginPage() {
           </p>
           <div style={styles.featureList}>
             {[
-              { icon: "🚨", text: "Submit urgent blood requests" },
-              { icon: "📍", text: "Match donors by proximity & blood type" },
-              { icon: "📊", text: "Monitor inventory levels" },
-              { icon: "📱", text: "Track donor SMS responses live" },
+              { icon: ">", text: "Submit urgent blood requests" },
+              { icon: ">", text: "Match donors by proximity & blood type" },
+              { icon: ">", text: "Monitor inventory levels" },
+              { icon: ">", text: "Track donor SMS responses live" },
             ].map((f) => (
               <div key={f.text} style={styles.featureItem}>
                 <span style={styles.featureIcon}>{f.icon}</span>
@@ -154,19 +154,19 @@ export default function HospitalLoginPage() {
 
           <Field label="Hospital ID" required error={touched.hospitalId && errors.hospitalId}
             helper="Assigned by Rwanda Biomedical Centre">
-            <InputField icon="🏥" value={form.hospitalId} placeholder="e.g. CHUK-001"
+            <InputField icon="" value={form.hospitalId} placeholder="e.g. CHUK-001"
               onChange={(e) => set("hospitalId", e.target.value)} onBlur={() => touch("hospitalId")}
               error={touched.hospitalId && errors.hospitalId} autoComplete="organization" />
           </Field>
 
           <Field label="Staff Email" required error={touched.email && errors.email}>
-            <InputField icon="✉️" type="email" value={form.email} placeholder="staff@hospital.rw"
+            <InputField icon="" type="email" value={form.email} placeholder="staff@hospital.rw"
               onChange={(e) => set("email", e.target.value)} onBlur={() => touch("email")}
               error={touched.email && errors.email} autoComplete="email" />
           </Field>
 
           <Field label="Password" required error={touched.password && errors.password}>
-            <InputField icon="🔒" type="password" value={form.password} placeholder="Your password"
+            <InputField icon="" type="password" value={form.password} placeholder="Your password"
               onChange={(e) => set("password", e.target.value)} onBlur={() => touch("password")}
               error={touched.password && errors.password} autoComplete="current-password" />
           </Field>
@@ -177,7 +177,7 @@ export default function HospitalLoginPage() {
           </button>
 
           <div style={styles.accessNote}>
-            <span>ℹ️</span>
+            <span></span>
             <span>Don't have credentials? <a href="mailto:hemolink@rbc.gov.rw" style={styles.accessLink}>Contact RBC to request access</a></span>
           </div>
 
