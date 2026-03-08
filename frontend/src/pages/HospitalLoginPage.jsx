@@ -102,7 +102,7 @@ export default function HospitalLoginPage() {
       <div style={styles.leftPanel}>
         <div style={styles.leftInner}>
           <button style={styles.backLink} onClick={() => navigate("/")}>← Back to Home</button>
-          <div style={{ fontSize: 52, marginBottom: 20 }}>🏥</div>
+          <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
           <h1 style={styles.leftTitle}>Hospital <em style={styles.leftEm}>Staff Portal</em></h1>
           <p style={styles.leftDesc}>
             Access your hospital dashboard to submit emergency blood requests,
