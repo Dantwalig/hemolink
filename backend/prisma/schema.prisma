@@ -7,8 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Rwanda has 5 provinces. This table is seeded once and never changed by the API.
-// provinceCode examples: "KIG", "NOR", "SOU", "EAS", "WES"
 model Province {
   provinceCode String @id @map("province_code")
   name         String
@@ -19,10 +17,6 @@ model Province {
   @@map("provinces")
 }
 
-// Rwanda has 30 districts. Each belongs to exactly one province.
-// districtCode examples: "GASABO", "HUYE", "MUSANZE"
-// The provinceCode foreign key lets us verify a district actually belongs
-// to the province a hospital claims to be in.
 model District {
   districtCode String @id @map("district_code")
   name         String
@@ -34,24 +28,19 @@ model District {
   @@map("districts")
 }
 
-// A hospital is a registered medical institution in Rwanda.
-// Address is structured using Rwanda's official administrative hierarchy:
-//   Province → District → Sector → Cell → Village
-// Latitude and longitude are optional — they can be looked up from the address,
-// but if provided they must fall within Rwanda's geographic bounds.
 model Hospital {
   hospitalId   Int     @id @default(autoincrement()) @map("hospital_id")
   name         String
-  phone        String  @unique              // Primary login identifier — must be unique
-  email        String? @unique              // Optional contact email — unique if present
+  phone        String  @unique
+  email        String? @unique
   password     String
   provinceCode String  @map("province_code")
   districtCode String  @map("district_code")
-  sector       String                       // Third level of Rwanda's admin hierarchy
-  cell         String                       // Fourth level
-  village      String                       // Fifth (most granular) level
-  latitude     Float?                       // Optional — must be within Rwanda if provided
-  longitude    Float?                       // Optional — must be within Rwanda if provided
+  sector       String
+  cell         String
+  village      String
+  latitude     Float?
+  longitude    Float?
 
   province      Province       @relation(fields: [provinceCode], references: [provinceCode])
   district      District       @relation(fields: [districtCode], references: [districtCode])
@@ -97,6 +86,8 @@ model Inventory {
   hospital  Hospital  @relation(fields: [hospitalId], references: [hospitalId])
   bloodType BloodType @relation(fields: [bloodTypeCode], references: [bloodTypeCode])
 
+  // FIX #13: Prevent duplicate rows for the same blood type at the same hospital
+  @@unique([hospitalId, bloodTypeCode])
   @@map("inventory")
 }
 
@@ -137,9 +128,11 @@ model Notification {
   notificationId     Int      @id @default(autoincrement()) @map("notification_id")
   requestId          Int      @map("request_id")
   donorId            Int      @map("donor_id")
+  token              String   @unique                          // secure SMS response token
   sentAt             DateTime @map("sent_at")
   deliveryStatusCode String   @map("delivery_status_code")
-  responseStatus     String   @map("response_status")
+  // FIX #6: nullable with default so inserts work before donor responds
+  responseStatus     String?  @default("pending") @map("response_status")
 
   bloodRequest       BloodRequest       @relation(fields: [requestId], references: [requestId])
   donor              Donor              @relation(fields: [donorId], references: [donorId])
