@@ -1,8 +1,22 @@
 const { Router } = require("express");
 const { authenticate, authorize } = require("../middlewares/auth");
-const { createRequest, updateStatus } = require("../controllers/request.controller");
+const { createRequest, getMyRequests, updateStatus } = require("../controllers/request.controller");
 
 const router = Router();
+
+/**
+ * @swagger
+ * /api/requests:
+ *   get:
+ *     summary: Get all blood requests for the logged-in hospital
+ *     tags: [Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: Requests retrieved }
+ *       401: { description: Unauthorized }
+ */
+router.get("/", authenticate, authorize("hospital"), getMyRequests);
 
 /**
  * @swagger
@@ -18,34 +32,15 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - bloodTypeCode
- *               - unitsNeeded
- *               - urgencyLevel
- *               - neededBy
+ *             required: [bloodTypeCode, unitsNeeded, urgencyLevel, neededBy]
  *             properties:
- *               bloodTypeCode:
- *                 type: string
- *                 example: "O+"
- *               unitsNeeded:
- *                 type: integer
- *                 example: 3
- *               urgencyLevel:
- *                 type: string
- *                 example: "high"
- *               neededBy:
- *                 type: string
- *                 format: date-time
- *                 example: "2026-03-10T08:00:00.000Z"
+ *               bloodTypeCode: { type: string,  example: "O+" }
+ *               unitsNeeded:   { type: integer, example: 3 }
+ *               urgencyLevel:  { type: string,  example: "high" }
+ *               neededBy:      { type: string,  format: date-time }
  *     responses:
- *       201:
- *         description: Blood request created successfully
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *       201: { description: Blood request created }
+ *       400: { description: Validation error }
  */
 router.post("/", authenticate, authorize("hospital"), createRequest);
 
@@ -53,7 +48,7 @@ router.post("/", authenticate, authorize("hospital"), createRequest);
  * @swagger
  * /api/requests/{id}/status:
  *   patch:
- *     summary: Update blood request status
+ *     summary: Update blood request status (owner only)
  *     tags: [Requests]
  *     security:
  *       - bearerAuth: []
@@ -61,33 +56,20 @@ router.post("/", authenticate, authorize("hospital"), createRequest);
  *       - in: path
  *         name: id
  *         required: true
- *         schema:
- *           type: integer
- *         description: Blood request ID
+ *         schema: { type: integer }
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - status
+ *             required: [status]
  *             properties:
- *               status:
- *                 type: string
- *                 enum: [pending, fulfilled, cancelled]
- *                 example: "fulfilled"
+ *               status: { type: string, enum: [pending, fulfilled, cancelled] }
  *     responses:
- *       200:
- *         description: Status updated successfully
- *       400:
- *         description: Invalid or missing status
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- *       404:
- *         description: Blood request not found
+ *       200: { description: Status updated }
+ *       403: { description: Forbidden — not your request }
+ *       404: { description: Not found }
  */
 router.patch("/:id/status", authenticate, authorize("hospital"), updateStatus);
 
