@@ -7,13 +7,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Hospital {
-  hospitalId Int    @id @default(autoincrement()) @map("hospital_id")
-  name       String
-  phone      String
-  latitude   Float
-  longitude  Float
+// Rwanda has 5 provinces. This table is seeded once and never changed by the API.
+// provinceCode examples: "KIG", "NOR", "SOU", "EAS", "WES"
+model Province {
+  provinceCode String @id @map("province_code")
+  name         String
 
+  districts District[]
+  hospitals Hospital[]
+
+  @@map("provinces")
+}
+
+// Rwanda has 30 districts. Each belongs to exactly one province.
+// districtCode examples: "GASABO", "HUYE", "MUSANZE"
+// The provinceCode foreign key lets us verify a district actually belongs
+// to the province a hospital claims to be in.
+model District {
+  districtCode String @id @map("district_code")
+  name         String
+  provinceCode String @map("province_code")
+
+  province  Province  @relation(fields: [provinceCode], references: [provinceCode])
+  hospitals Hospital[]
+
+  @@map("districts")
+}
+
+// A hospital is a registered medical institution in Rwanda.
+// Address is structured using Rwanda's official administrative hierarchy:
+//   Province → District → Sector → Cell → Village
+// Latitude and longitude are optional — they can be looked up from the address,
+// but if provided they must fall within Rwanda's geographic bounds.
+model Hospital {
+  hospitalId   Int     @id @default(autoincrement()) @map("hospital_id")
+  name         String
+  phone        String  @unique              // Primary login identifier — must be unique
+  email        String? @unique              // Optional contact email — unique if present
+  password     String
+  provinceCode String  @map("province_code")
+  districtCode String  @map("district_code")
+  sector       String                       // Third level of Rwanda's admin hierarchy
+  cell         String                       // Fourth level
+  village      String                       // Fifth (most granular) level
+  latitude     Float?                       // Optional — must be within Rwanda if provided
+  longitude    Float?                       // Optional — must be within Rwanda if provided
+
+  province      Province       @relation(fields: [provinceCode], references: [provinceCode])
+  district      District       @relation(fields: [districtCode], references: [districtCode])
   bloodRequests BloodRequest[]
   inventory     Inventory[]
 
