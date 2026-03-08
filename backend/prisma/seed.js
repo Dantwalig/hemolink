@@ -4,7 +4,12 @@ const prisma = new PrismaClient();
 
 const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
-// Rwanda's 5 provinces with short uppercase codes used as primary keys
+// FIX #4: Seed RequestStatus so BloodRequest FK inserts don't fail
+const requestStatuses = ["pending", "fulfilled", "cancelled"];
+
+// FIX #5: Seed NotificationStatus so Notification FK inserts don't fail
+const notificationStatuses = ["sent", "delivered", "failed"];
+
 const provinces = [
   { provinceCode: "KIG", name: "Kigali" },
   { provinceCode: "NOR", name: "Northern" },
@@ -13,23 +18,18 @@ const provinces = [
   { provinceCode: "WES", name: "Western" },
 ];
 
-// Rwanda's 30 districts. Each entry includes the provinceCode it belongs to.
-// This allows the API to verify that a submitted district actually belongs to
-// the submitted province — not just that both codes individually exist.
 const districts = [
-  // Kigali (3 districts)
+  // Kigali
   { districtCode: "GASABO",     name: "Gasabo",     provinceCode: "KIG" },
   { districtCode: "KICUKIRO",   name: "Kicukiro",   provinceCode: "KIG" },
   { districtCode: "NYARUGENGE", name: "Nyarugenge", provinceCode: "KIG" },
-
-  // Northern (5 districts)
+  // Northern
   { districtCode: "BURERA",   name: "Burera",   provinceCode: "NOR" },
   { districtCode: "GAKENKE",  name: "Gakenke",  provinceCode: "NOR" },
   { districtCode: "GICUMBI",  name: "Gicumbi",  provinceCode: "NOR" },
   { districtCode: "MUSANZE",  name: "Musanze",  provinceCode: "NOR" },
   { districtCode: "RULINDO",  name: "Rulindo",  provinceCode: "NOR" },
-
-  // Southern (8 districts)
+  // Southern
   { districtCode: "GISAGARA",  name: "Gisagara",  provinceCode: "SOU" },
   { districtCode: "HUYE",      name: "Huye",      provinceCode: "SOU" },
   { districtCode: "KAMONYI",   name: "Kamonyi",   provinceCode: "SOU" },
@@ -38,8 +38,7 @@ const districts = [
   { districtCode: "NYANZA",    name: "Nyanza",    provinceCode: "SOU" },
   { districtCode: "NYARUGURU", name: "Nyaruguru", provinceCode: "SOU" },
   { districtCode: "RUHANGO",   name: "Ruhango",   provinceCode: "SOU" },
-
-  // Eastern (7 districts)
+  // Eastern
   { districtCode: "BUGESERA",  name: "Bugesera",  provinceCode: "EAS" },
   { districtCode: "GATSIBO",   name: "Gatsibo",   provinceCode: "EAS" },
   { districtCode: "KAYONZA",   name: "Kayonza",   provinceCode: "EAS" },
@@ -47,8 +46,7 @@ const districts = [
   { districtCode: "NGOMA",     name: "Ngoma",     provinceCode: "EAS" },
   { districtCode: "NYAGATARE", name: "Nyagatare", provinceCode: "EAS" },
   { districtCode: "RWAMAGANA", name: "Rwamagana", provinceCode: "EAS" },
-
-  // Western (7 districts)
+  // Western
   { districtCode: "KARONGI",    name: "Karongi",    provinceCode: "WES" },
   { districtCode: "NGORORERO",  name: "Ngororero",  provinceCode: "WES" },
   { districtCode: "NYABIHU",    name: "Nyabihu",    provinceCode: "WES" },
@@ -69,7 +67,28 @@ async function main() {
   }
   console.log(`Seeded ${bloodTypes.length} blood types.`);
 
-  // Provinces must be seeded before districts because districts reference them
+  // FIX #4
+  console.log("Seeding request statuses...");
+  for (const code of requestStatuses) {
+    await prisma.requestStatus.upsert({
+      where: { statusCode: code },
+      update: {},
+      create: { statusCode: code },
+    });
+  }
+  console.log(`Seeded ${requestStatuses.length} request statuses.`);
+
+  // FIX #5
+  console.log("Seeding notification statuses...");
+  for (const code of notificationStatuses) {
+    await prisma.notificationStatus.upsert({
+      where: { deliveryStatusCode: code },
+      update: {},
+      create: { deliveryStatusCode: code },
+    });
+  }
+  console.log(`Seeded ${notificationStatuses.length} notification statuses.`);
+
   console.log("Seeding Rwanda provinces...");
   for (const province of provinces) {
     await prisma.province.upsert({
