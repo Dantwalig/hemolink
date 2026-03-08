@@ -11,7 +11,6 @@ Tech stack:
 -   **Database:** PostgreSQL
 -   **API Docs:** Swagger
 
-------------------------------------------------------------------------
 
 # Team Members
 
@@ -22,7 +21,6 @@ Tech stack:
 5.  Mfitumukiza Peter
 6.  Teta Butera Nelly
 
-------------------------------------------------------------------------
 
 # Project Structure
 
@@ -46,7 +44,6 @@ Backend overview:
     │   ├── middlewares/
     │   └── utils/
 
-------------------------------------------------------------------------
 
 # Quick Start (Backend)
 
@@ -55,7 +52,6 @@ Backend overview:
     cd backend
     npm install
 
-------------------------------------------------------------------------
 
 ### 2. Configure environment variables
 
@@ -70,7 +66,6 @@ Example:
     PORT=3001
     NODE_ENV=development
 
-------------------------------------------------------------------------
 
 ### 3. Run database migrations
 
@@ -78,7 +73,6 @@ Example:
 
 This will create the required database tables.
 
-------------------------------------------------------------------------
 
 ### 4. Generate Prisma Client
 
@@ -86,7 +80,6 @@ If Prisma complains or after pulling new schema changes:
 
     npx prisma generate
 
-------------------------------------------------------------------------
 
 ### 5. Start the development server
 
@@ -96,7 +89,6 @@ Server runs at:
 
     http://localhost:3001
 
-------------------------------------------------------------------------
 
 # API Documentation
 
@@ -104,7 +96,6 @@ Swagger documentation:
 
     http://localhost:3001/api-docs
 
-------------------------------------------------------------------------
 
 # Useful Development Commands
 
@@ -122,7 +113,6 @@ This opens a browser interface where you can:
 -   Edit records manually
 -   Debug data issues
 
-------------------------------------------------------------------------
 
 ### Apply New Schema Changes
 
@@ -130,13 +120,11 @@ If the schema changes:
 
     npx prisma migrate dev
 
-------------------------------------------------------------------------
 
 ### Regenerate Prisma Client
 
     npx prisma generate
 
-------------------------------------------------------------------------
 
 ### Reset Local Database (Development Only)
 
@@ -152,7 +140,6 @@ This will:
 
 Use only in development.
 
-------------------------------------------------------------------------
 
 # API Overview
 
@@ -164,7 +151,6 @@ All endpoints use:
 
     GET /api/health
 
-------------------------------------------------------------------------
 
 ### Donor Endpoints
 
@@ -174,14 +160,12 @@ All endpoints use:
     PUT /api/donors/profile
     PUT /api/donors/availability
 
-------------------------------------------------------------------------
 
 ### Hospital Endpoints
 
     POST /api/hospitals/register
     POST /api/hospitals/login
 
-------------------------------------------------------------------------
 
 ### Blood Request Endpoints
 
@@ -190,7 +174,6 @@ All endpoints use:
 
 Hospitals create and manage blood requests.
 
-------------------------------------------------------------------------
 
 # Authentication
 
@@ -207,7 +190,6 @@ Roles:
   donor      manage donor profile
   hospital   create and update blood requests
 
-------------------------------------------------------------------------
 
 # API Response Format
 
@@ -226,7 +208,6 @@ Error response:
       "message": "Error message"
     }
 
-------------------------------------------------------------------------
 
 # Developer Guidelines
 
@@ -238,7 +219,6 @@ Error response:
 6.  Use migrations for database changes
 7.  Write tests for new endpoints
 
-------------------------------------------------------------------------
 
 # Troubleshooting
 
@@ -248,7 +228,6 @@ Run:
 
     npx prisma generate
 
-------------------------------------------------------------------------
 
 ### Dependency issues
 
@@ -257,7 +236,6 @@ Reset dependencies:
     rm -rf node_modules
     npm install
 
-------------------------------------------------------------------------
 
 ### Database debugging
 
@@ -265,7 +243,6 @@ Use Prisma Studio:
 
     npx prisma studio
 
-------------------------------------------------------------------------
 
 # Notes
 
