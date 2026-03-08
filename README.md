@@ -1,262 +1,196 @@
-
 # Hemolink
 
-Hemolink is a blood donation coordination platform that connects **donors** with **hospitals** requesting blood. Hospitals can create blood requests and donors can be notified to respond.
+Hemolink is a blood donation coordination platform that connects
+**donors** with **hospitals** requesting blood.\
+Hospitals can create blood requests and donors can be notified to
+respond.
 
-The system consists of:
+Tech stack:
 
-- **Backend** – Node.js + Express + PostgreSQL + Prisma
-- **Frontend** – client application
-- **Database** – PostgreSQL
+-   **Backend:** Node.js + Express + Prisma
+-   **Database:** PostgreSQL
+-   **API Docs:** Swagger
 
----
+------------------------------------------------------------------------
 
 # Team Members
 
-1. Daniel Gakumba Ntwali  
-2. Melyssa Ingabe Mbayire  
-3. Ariane Itetero  
-4. Dianah Shimwa Gasasira  
-5. Mfitumukiza Peter  
-6. Teta Butera Nelly  
+1.  Daniel Gakumba Ntwali\
+2.  Melyssa Ingabe Mbayire\
+3.  Ariane Itetero\
+4.  Dianah Shimwa Gasasira\
+5.  Mfitumukiza Peter\
+6.  Teta Butera Nelly
 
----
+------------------------------------------------------------------------
 
 # Project Structure
 
-```
-hemolink/
-├── backend/      # Node.js REST API
-├── frontend/     # Frontend application
-└── README.md
-```
+    hemolink/
+    ├── backend/      # Node.js REST API
+    ├── frontend/     # Frontend application
+    └── README.md
 
-Backend structure:
+Backend overview:
 
-```
-backend/
-├── prisma/
-│   ├── schema.prisma
-│   ├── seed.js
-│   └── migrations/
-│
-├── src/
-│   ├── index.js
-│   ├── config/
-│   ├── controllers/
-│   ├── routes/
-│   ├── middlewares/
-│   └── utils/
-```
+    backend/
+    ├── prisma/
+    │   ├── schema.prisma
+    │   └── migrations/
+    │
+    ├── src/
+    │   ├── index.js
+    │   ├── config/
+    │   ├── controllers/
+    │   ├── routes/
+    │   ├── middlewares/
+    │   └── utils/
 
----
+------------------------------------------------------------------------
 
-# Quick Start (Recommended Setup)
+# Quick Start (Backend)
 
-This section gets the backend running **without reading the entire documentation**.
+### 1. Install dependencies
 
-### 1 Install dependencies
+    cd backend
+    npm install
 
-```
-cd backend
-npm install
-```
+------------------------------------------------------------------------
 
----
+### 2. Configure environment variables
 
-### 2 Setup environment variables
+Create:
 
-Create a file:
-
-```
-backend/.env
-```
+    backend/.env
 
 Example:
 
-```
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/hemolink"
-JWT_SECRET="super-secret-key"
-PORT=3001
-NODE_ENV=development
-```
+    DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/hemolink"
+    JWT_SECRET="super-secret-key"
+    PORT=3001
+    NODE_ENV=development
 
----
+------------------------------------------------------------------------
 
-### 3 Run database migrations
+### 3. Run database migrations
 
-```
-npx prisma migrate dev
-```
+    npx prisma migrate dev
 
-This creates the database tables.
+This will create the required database tables.
 
----
+------------------------------------------------------------------------
 
-### 4 Generate Prisma client
+### 4. Generate Prisma Client
 
-If Prisma errors appear, run:
+If Prisma complains or after pulling new schema changes:
 
-```
-npx prisma generate
-```
+    npx prisma generate
 
----
+------------------------------------------------------------------------
 
-### 5 Seed reference data
+### 5. Start the development server
 
-This step is **required** or many endpoints will fail.
+    npm run dev
 
-```
-npm run prisma:seed
-```
+Server runs at:
 
-This inserts:
+    http://localhost:3001
 
-- Blood types
-- Provinces
-- Districts
-- Request statuses
+------------------------------------------------------------------------
 
----
+# API Documentation
 
-### 6 Start the server
+Swagger documentation:
 
-```
-npm run dev
-```
+    http://localhost:3001/api-docs
 
-Server should start on:
+------------------------------------------------------------------------
 
-```
-http://localhost:3001
-```
+# Useful Development Commands
 
----
+Developers often need to inspect or interact with the database.\
+These commands make that easier.
 
-### 7 View API documentation
+### View Database Tables (Prisma Studio)
 
-Swagger documentation is available at:
+    npx prisma studio
 
-```
-http://localhost:3001/api-docs
-```
+This opens a browser interface where you can:
 
----
+-   View all tables
+-   Inspect rows
+-   Edit records manually
+-   Debug data issues
 
-# Running Tests
+------------------------------------------------------------------------
 
-```
-npm test
-```
+### Apply New Schema Changes
 
-Tests use **Jest** and **Supertest** and mock the database.
+If the schema changes:
 
----
+    npx prisma migrate dev
 
-# Common Setup Errors (and Fixes)
+------------------------------------------------------------------------
 
-### Error: `@prisma/client did not initialize`
+### Regenerate Prisma Client
 
-Run:
+    npx prisma generate
 
-```
-npx prisma generate
-```
+------------------------------------------------------------------------
 
----
+### Reset Local Database (Development Only)
 
-### Error: `Invalid province code "KIG"`
+If things break badly during development:
 
-The reference tables were not seeded.
+    npx prisma migrate reset
 
-Run:
+This will:
 
-```
-npm run prisma:seed
-```
+-   Drop the database
+-   Recreate tables
+-   Reapply migrations
 
----
+Use only in development.
 
-### Error: `Foreign key constraint violated`
-
-This usually means **reference data is missing**.
-
-Examples:
-
-| Error | Cause |
-|-----|-----|
-blood_requests_status_code_fkey | request status table empty |
-province_code_fkey | provinces not seeded |
-district_code_fkey | districts not seeded |
-
-Fix:
-
-```
-npm run prisma:seed
-```
-
----
-
-### Error: Prisma crashes after install
-
-Reset dependencies:
-
-```
-rm -rf node_modules
-npm install
-npx prisma generate
-```
-
----
+------------------------------------------------------------------------
 
 # API Overview
 
-All endpoints use the prefix:
+All endpoints use:
 
-```
-/api
-```
+    /api
 
-### Health
+### Health Check
 
-```
-GET /api/health
-```
+    GET /api/health
 
----
+------------------------------------------------------------------------
 
-### Donors
+### Donor Endpoints
 
-```
-POST /api/donors/register
-POST /api/donors/login
-GET /api/donors/profile
-PUT /api/donors/profile
-PUT /api/donors/availability
-```
+    POST /api/donors/register
+    POST /api/donors/login
+    GET /api/donors/profile
+    PUT /api/donors/profile
+    PUT /api/donors/availability
 
----
+------------------------------------------------------------------------
 
-### Hospitals
+### Hospital Endpoints
 
-```
-POST /api/hospitals/register
-POST /api/hospitals/login
-```
+    POST /api/hospitals/register
+    POST /api/hospitals/login
 
----
+------------------------------------------------------------------------
 
-### Blood Requests
+### Blood Request Endpoints
 
-```
-POST /api/requests
-PATCH /api/requests/:id/status
-```
+    POST /api/requests
+    PATCH /api/requests/:id/status
 
-Only **authenticated hospitals** can create or update blood requests.
+Hospitals create and manage blood requests.
 
----
+------------------------------------------------------------------------
 
 # Authentication
 
@@ -264,88 +198,79 @@ Authentication uses **JWT tokens**.
 
 Example header:
 
-```
-Authorization: Bearer <token>
-```
+    Authorization: Bearer <token>
 
 Roles:
 
-| Role | Permissions |
-|----|----|
-donor | manage donor profile |
-hospital | create blood requests |
+  Role       Permissions
+  ---------- ----------------------------------
+  donor      manage donor profile
+  hospital   create and update blood requests
 
----
+------------------------------------------------------------------------
 
-# Standard API Response Format
+# API Response Format
 
-Success:
+Successful response:
 
-```
-{
-  "success": true,
-  "message": "Success message",
-  "data": {}
-}
-```
+    {
+      "success": true,
+      "message": "Success message",
+      "data": {}
+    }
 
-Error:
+Error response:
 
-```
-{
-  "success": false,
-  "message": "Error message"
-}
-```
+    {
+      "success": false,
+      "message": "Error message"
+    }
 
----
+------------------------------------------------------------------------
 
-# Full Backend Engineering Documentation
+# Developer Guidelines
 
-The detailed engineering reference explaining:
+1.  Never store plaintext passwords
+2.  Always hash passwords with bcrypt
+3.  Never return passwords in API responses
+4.  Validate all request data before database queries
+5.  Follow the **routes → controllers → prisma** architecture
+6.  Use migrations for database changes
+7.  Write tests for new endpoints
 
-- every file
-- every controller
-- database schema
-- architectural decisions
+------------------------------------------------------------------------
 
-is located here:
+# Troubleshooting
 
-```
-backend/ENGINEERING_REFERENCE.md
-```
+### Prisma client error
 
----
+Run:
 
-# Developer Rules
+    npx prisma generate
 
-1. Never store plaintext passwords  
-2. Always hash passwords using bcrypt  
-3. Never return passwords in API responses  
-4. Always validate request data before database queries  
-5. Follow the route → controller → prisma architecture  
-6. Use migrations for database changes  
-7. Write tests for new endpoints  
+------------------------------------------------------------------------
 
----
+### Dependency issues
 
-# Database Tools
+Reset dependencies:
 
-Open the Prisma database GUI:
+    rm -rf node_modules
+    npm install
 
-```
-npx prisma studio
-```
+------------------------------------------------------------------------
 
----
+### Database debugging
 
-# Notes for New Developers
+Use Prisma Studio:
 
-If the API returns unexpected errors:
+    npx prisma studio
 
-1. Ensure migrations are applied
-2. Ensure reference data is seeded
-3. Ensure Prisma client is generated
-4. Check `.env` configuration
+------------------------------------------------------------------------
 
-Most errors during setup come from **missing database setup steps**.
+# Notes
+
+Most development issues are related to:
+
+-   missing migrations
+-   incorrect environment variables
+-   Prisma client not generated
