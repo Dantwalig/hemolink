@@ -6,7 +6,6 @@ const VALID_STATUSES = ["pending", "fulfilled", "cancelled"];
 const createRequest = async (req, res, next) => {
   try {
     const { bloodTypeCode, unitsNeeded, urgencyLevel, neededBy } = req.body;
-    // Hospital ID comes from the JWT token set by the authenticate middleware
     const hospitalId = req.user.id;
 
     if (!bloodTypeCode || unitsNeeded == null || !urgencyLevel || !neededBy) {
@@ -23,9 +22,12 @@ const createRequest = async (req, res, next) => {
         bloodTypeCode,
         unitsNeeded,
         urgencyLevel,
-        // New requests start as pending
         statusCode: "pending",
         neededBy: new Date(neededBy),
+      },
+      include: {
+        hospital:  { select: { name: true } },
+        bloodType: true,
       },
     });
 
@@ -35,10 +37,32 @@ const createRequest = async (req, res, next) => {
   }
 };
 
+const getMyRequests = async (req, res, next) => {
+  try {
+    const hospitalId = req.user.id;
+
+    const requests = await prisma.bloodRequest.findMany({
+      where: { hospitalId },
+      include: {
+        bloodType:     true,
+        requestStatus: true,
+        notifications: { select: { responseStatus: true } },
+      },
+      orderBy: { neededBy: "asc" },
+    });
+
+    return success(res, requests, "Requests retrieved successfully.");
+  } catch (err) {
+    next(err);
+  }
+};
+
+// FIX #9: ownership check — a hospital can only update its own requests
 const updateStatus = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { id }    = req.params;
     const { status } = req.body;
+    const hospitalId = req.user.id;
 
     if (!status) {
       return error(res, "Field 'status' is required.", 400);
@@ -48,7 +72,6 @@ const updateStatus = async (req, res, next) => {
       return error(res, `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}.`, 400);
     }
 
-    // Confirm the request exists before attempting to update
     const existing = await prisma.bloodRequest.findUnique({
       where: { requestId: Number(id) },
     });
@@ -57,9 +80,14 @@ const updateStatus = async (req, res, next) => {
       return error(res, "Blood request not found.", 404);
     }
 
+    // FIX #9: only the owning hospital may change status
+    if (existing.hospitalId !== hospitalId) {
+      return error(res, "Forbidden. You do not own this blood request.", 403);
+    }
+
     const updated = await prisma.bloodRequest.update({
       where: { requestId: Number(id) },
-      data: { statusCode: status },
+      data:  { statusCode: status },
     });
 
     return success(res, updated, "Blood request status updated successfully.");
@@ -68,4 +96,4 @@ const updateStatus = async (req, res, next) => {
   }
 };
 
-module.exports = { createRequest, updateStatus };
+module.exports = { createRequest, getMyRequests, updateStatus };
