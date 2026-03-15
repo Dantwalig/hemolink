@@ -24,15 +24,16 @@ const register = async (req, res, next) => {
       latitude, longitude,
     } = req.body;
 
-    if (!name || !phone || !password || !provinceCode || !districtCode || !sector || !cell || !village) {
-      return error(res, "All fields are required: name, phone, password, provinceCode, districtCode, sector, cell, village.", 400);
+    // email is now required for login
+    if (!name || !phone || !email || !password || !provinceCode || !districtCode || !sector || !cell || !village) {
+      return error(res, "All fields are required: name, phone, email, password, provinceCode, districtCode, sector, cell, village.", 400);
     }
 
     if (password.length < 6) {
       return error(res, "Password must be at least 6 characters.", 400);
     }
 
-    if (email && !EMAIL_REGEX.test(email)) {
+    if (!EMAIL_REGEX.test(email)) {
       return error(res, "Invalid email format.", 400);
     }
 
@@ -57,11 +58,9 @@ const register = async (req, res, next) => {
       return error(res, "A hospital with this phone number already exists.", 409);
     }
 
-    if (email) {
-      const existingEmail = await prisma.hospital.findUnique({ where: { email } });
-      if (existingEmail) {
-        return error(res, "A hospital with this email address already exists.", 409);
-      }
+    const existingEmail = await prisma.hospital.findUnique({ where: { email } });
+    if (existingEmail) {
+      return error(res, "A hospital with this email address already exists.", 409);
     }
 
     const province = await prisma.province.findUnique({ where: { provinceCode } });
@@ -81,38 +80,48 @@ const register = async (req, res, next) => {
 
     const hospital = await prisma.hospital.create({
       data: {
-        name, phone,
-        email: email || null,
+        name, phone, email,
         password: hashedPassword,
         provinceCode, districtCode,
         sector, cell, village,
         latitude:  hasLat ? latitude  : null,
         longitude: hasLon ? longitude : null,
+        isApproved: false, // pending admin approval
       },
     });
 
-    return success(res, sanitizeHospital(hospital), "Hospital registered successfully.", 201);
+    return success(
+      res,
+      sanitizeHospital(hospital),
+      "Hospital registered successfully. Your account is pending admin approval before you can log in.",
+      201
+    );
   } catch (err) {
     next(err);
   }
 };
 
+// Login uses email + password. Blocked until admin sets isApproved = true.
 const login = async (req, res, next) => {
   try {
-    const { phone, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!phone || !password) {
-      return error(res, "Phone and password are required.", 400);
+    if (!email || !password) {
+      return error(res, "Email and password are required.", 400);
     }
 
-    const hospital = await prisma.hospital.findUnique({ where: { phone } });
+    const hospital = await prisma.hospital.findUnique({ where: { email } });
     if (!hospital) {
-      return error(res, "Invalid phone or password.", 401);
+      return error(res, "Invalid email or password.", 401);
     }
 
     const valid = await bcrypt.compare(password, hospital.password);
     if (!valid) {
-      return error(res, "Invalid phone or password.", 401);
+      return error(res, "Invalid email or password.", 401);
+    }
+
+    if (!hospital.isApproved) {
+      return error(res, "Your account is pending approval. Please contact RBC to activate your account.", 403);
     }
 
     const token = jwt.sign(

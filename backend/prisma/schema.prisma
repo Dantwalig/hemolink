@@ -32,7 +32,7 @@ model Hospital {
   hospitalId   Int     @id @default(autoincrement()) @map("hospital_id")
   name         String
   phone        String  @unique
-  email        String? @unique
+  email        String  @unique                        // now required — used for login
   password     String
   provinceCode String  @map("province_code")
   districtCode String  @map("district_code")
@@ -41,6 +41,7 @@ model Hospital {
   village      String
   latitude     Float?
   longitude    Float?
+  isApproved   Boolean @default(false) @map("is_approved") // admin must approve before login works
 
   province      Province       @relation(fields: [provinceCode], references: [provinceCode])
   district      District       @relation(fields: [districtCode], references: [districtCode])
@@ -86,7 +87,6 @@ model Inventory {
   hospital  Hospital  @relation(fields: [hospitalId], references: [hospitalId])
   bloodType BloodType @relation(fields: [bloodTypeCode], references: [bloodTypeCode])
 
-  // FIX #13: Prevent duplicate rows for the same blood type at the same hospital
   @@unique([hospitalId, bloodTypeCode])
   @@map("inventory")
 }
@@ -128,10 +128,9 @@ model Notification {
   notificationId     Int      @id @default(autoincrement()) @map("notification_id")
   requestId          Int      @map("request_id")
   donorId            Int      @map("donor_id")
-  token              String   @unique                          // secure SMS response token
+  token              String   @unique
   sentAt             DateTime @map("sent_at")
   deliveryStatusCode String   @map("delivery_status_code")
-  // FIX #6: nullable with default so inserts work before donor responds
   responseStatus     String?  @default("pending") @map("response_status")
 
   bloodRequest       BloodRequest       @relation(fields: [requestId], references: [requestId])
