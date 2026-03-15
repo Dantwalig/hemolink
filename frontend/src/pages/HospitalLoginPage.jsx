@@ -55,8 +55,7 @@ export default function HospitalLoginPage() {
   const navigate  = useNavigate();
   const { login } = useAuth();
 
-  // FIX #1: form now has phone instead of hospitalId + email
-  const [form,        setForm]        = useState({ phone: "", password: "" });
+  const [form,        setForm]        = useState({ email: "", password: "" });
   const [errors,      setErrors]      = useState({});
   const [touched,     setTouched]     = useState({});
   const [loading,     setLoading]     = useState(false);
@@ -73,9 +72,12 @@ export default function HospitalLoginPage() {
   };
 
   const validateAll = () => {
-    const errs = { phone: validators.phone(form.phone), password: validators.password(form.password) };
+    const errs = {
+      email:      validators.email(form.email),
+      password:   validators.password(form.password),
+    };
     setErrors(errs);
-    setTouched({ phone: true, password: true });
+    setTouched({ email: true, password: true });
     return !Object.values(errs).some(Boolean);
   };
 
