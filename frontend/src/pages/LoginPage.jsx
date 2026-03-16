@@ -106,6 +106,7 @@ export default function LoginPage() {
     <div style={styles.page}>
       <div style={styles.leftPanel}>
         <div style={styles.leftInner}>
+          <button style={styles.backLink} onClick={() => navigate("/")}>← Back to Home</button>
           <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
           <h1 style={styles.leftTitle}>Welcome back, <em style={styles.leftEm}>donor.</em></h1>
           <p style={styles.leftDesc}>
@@ -165,17 +166,18 @@ export default function LoginPage() {
 
 const styles = {
   page:           { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" },
-  leftPanel:      { flex: 1, background: "#C0392B", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 48px" },
-  leftInner:      { maxWidth: 420 },
-  logoDrop:       { width: 48, height: 48, background: "rgba(255,255,255,0.2)", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 32 },
+  leftPanel:     { width: "45vw", flexShrink: 0, position: "fixed", top: 0, left: 0, height: "100vh", overflow: "hidden", background: "#C0392B", display: "flex", alignItems: "center", justifyContent: "center" },
+  leftInner:      { maxWidth: 420, width: "100%", padding: "32px 40px", display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" },
+  backLink:       { background: "none", border: "none", color: "rgba(255,255,255,0.7)", fontSize: 12, cursor: "pointer", marginBottom: 16, display: "block", padding: 0, textAlign: "left" },
+  logoDrop:       { width: 36, height: 36, background: "rgba(255,255,255,0.2)", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 },
   logoDropText:   { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 18 },
-  leftTitle:      { fontSize: 36, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 16 },
+  leftTitle:      { fontSize: 26, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 10 },
   leftEm:         { fontStyle: "italic", fontWeight: 400, color: "rgba(255,255,255,0.75)" },
-  leftDesc:       { fontSize: 15, color: "rgba(255,255,255,0.82)", lineHeight: 1.75, marginBottom: 36 },
-  leftCard:       { background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "flex-start", gap: 14 },
+  leftDesc:       { fontSize: 13, color: "rgba(255,255,255,0.82)", lineHeight: 1.6, marginBottom: 20 },
+  leftCard:       { background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "flex-start", gap: 10 },
   leftCardTitle:  { fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 },
   leftCardSub:    { fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 },
-  rightPanel:     { flex: 1, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 48px" },
+  rightPanel:    { marginLeft: "45vw", flex: 1, background: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "60px 48px", overflowY: "auto" },
   formBox:        { width: "100%", maxWidth: 420 },
   formTitle:      { fontSize: 26, fontWeight: 800, color: "#1C1C1C", marginBottom: 6 },
   formSub:        { fontSize: 14, color: "#6B6B6B", marginBottom: 28, lineHeight: 1.5 },
