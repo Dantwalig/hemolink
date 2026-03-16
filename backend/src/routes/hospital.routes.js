@@ -19,7 +19,6 @@ const router = Router();
  *           type: string
  *         email:
  *           type: string
- *           nullable: true
  *         provinceCode:
  *           type: string
  *           example: "KIG"
@@ -38,19 +37,19 @@ const router = Router();
  *         longitude:
  *           type: number
  *           nullable: true
+ *         isApproved:
+ *           type: boolean
  */
 
 /**
  * @swagger
  * /api/hospitals/register:
  *   post:
- *     summary: Register a new hospital
+ *     summary: Register a new hospital (pending admin approval)
  *     description: |
- *       Registers a hospital in Rwanda. The address must use Rwanda's official
- *       administrative hierarchy: Province → District → Sector → Cell → Village.
+ *       Registers a hospital in Rwanda. The account will be inactive until an admin
+ *       sets isApproved = true. The email address is required and is used for login.
  *       Province and district codes are validated against seeded reference tables.
- *       Latitude and longitude are optional; if provided, both must be given and
- *       must fall within Rwanda's geographic boundaries.
  *     tags: [Hospitals]
  *     requestBody:
  *       required: true
@@ -61,6 +60,7 @@ const router = Router();
  *             required:
  *               - name
  *               - phone
+ *               - email
  *               - password
  *               - provinceCode
  *               - districtCode
@@ -76,19 +76,16 @@ const router = Router();
  *                 example: "0788100021"
  *               email:
  *                 type: string
- *                 example: "kfh@hemolink.rw"
- *                 description: "Optional. Must be unique if provided."
+ *                 example: "admin@kfh.rw"
  *               password:
  *                 type: string
  *                 example: "secure123"
  *               provinceCode:
  *                 type: string
  *                 example: "KIG"
- *                 description: "One of: KIG, NOR, SOU, EAS, WES"
  *               districtCode:
  *                 type: string
  *                 example: "GASABO"
- *                 description: "Must belong to the submitted provinceCode"
  *               sector:
  *                 type: string
  *                 example: "Remera"
@@ -101,18 +98,16 @@ const router = Router();
  *               latitude:
  *                 type: number
  *                 example: -1.9441
- *                 description: "Optional. Must be between -2.84 and -1.05"
  *               longitude:
  *                 type: number
  *                 example: 30.0619
- *                 description: "Optional. Must be between 28.86 and 30.90"
  *     responses:
  *       201:
- *         description: Hospital registered successfully
+ *         description: Hospital registered, pending admin approval
  *       400:
- *         description: Validation error (missing fields, invalid province/district, out-of-bounds coordinates)
+ *         description: Validation error
  *       409:
- *         description: Phone number or email already registered
+ *         description: Phone or email already registered
  */
 router.post("/register", register);
 
@@ -120,7 +115,7 @@ router.post("/register", register);
  * @swagger
  * /api/hospitals/login:
  *   post:
- *     summary: Login a hospital
+ *     summary: Login a hospital using email + password
  *     tags: [Hospitals]
  *     requestBody:
  *       required: true
@@ -129,12 +124,12 @@ router.post("/register", register);
  *           schema:
  *             type: object
  *             required:
- *               - phone
+ *               - email
  *               - password
  *             properties:
- *               phone:
+ *               email:
  *                 type: string
- *                 example: "0788100001"
+ *                 example: "admin@kfh.rw"
  *               password:
  *                 type: string
  *                 example: "secure123"
@@ -142,7 +137,9 @@ router.post("/register", register);
  *       200:
  *         description: Login successful, returns hospital profile and JWT token
  *       401:
- *         description: Invalid phone or password
+ *         description: Invalid email or password
+ *       403:
+ *         description: Account pending admin approval
  */
 router.post("/login", login);
 
@@ -151,10 +148,6 @@ router.post("/login", login);
  * /api/hospitals/profile:
  *   get:
  *     summary: Get the logged-in hospital profile
- *     description: |
- *       Returns the profile of the currently authenticated hospital.
- *       This route is protected and requires a valid JWT token.
- *       Access is restricted to users with the hospital role.
  *     tags: [Hospitals]
  *     security:
  *       - bearerAuth: []
@@ -162,9 +155,9 @@ router.post("/login", login);
  *       200:
  *         description: Hospital profile retrieved successfully
  *       401:
- *         description: Unauthorized - missing or invalid token
+ *         description: Unauthorized
  *       403:
- *         description: Forbidden - user is not authorized as a hospital
+ *         description: Forbidden
  */
 router.get("/profile", authenticate, authorize("hospital"), getProfile);
 
