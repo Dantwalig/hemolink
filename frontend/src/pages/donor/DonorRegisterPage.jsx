@@ -194,6 +194,7 @@ export default function DonorRegisterPage() {
     <div style={styles.page}>
       <div style={styles.leftPanel}>
         <div style={styles.leftInner}>
+          <button style={styles.backLink} onClick={() => navigate("/")}>← Back to Home</button>
           <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
           <h1 style={styles.leftTitle}>Join the <em style={styles.leftEm}>network</em> that saves lives.</h1>
           <p style={styles.leftDesc}>
@@ -352,8 +353,9 @@ export default function DonorRegisterPage() {
 
 const styles = {
   page:           { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" },
-  leftPanel:      { flex: 1, background: "#C0392B", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 48px" },
-  leftInner:      { maxWidth: 420 },
+  leftPanel:     { width: "45vw", flexShrink: 0, position: "fixed", top: 0, left: 0, height: "100vh", overflow: "hidden", background: "#C0392B", display: "flex", alignItems: "center", justifyContent: "center" },
+  leftInner:      { maxWidth: 420, width: "100%", padding: "32px 40px", display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" },
+  backLink:       { background: "none", border: "none", color: "rgba(255,255,255,0.7)", fontSize: 12, cursor: "pointer", marginBottom: 16, display: "block", padding: 0, textAlign: "left" },
   logoDrop:       { width: 48, height: 48, background: "rgba(255,255,255,0.2)", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 32 },
   logoDropText:   { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 18 },
   leftTitle:      { fontSize: 34, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 16 },
@@ -363,7 +365,7 @@ const styles = {
   infoItem:       { display: "flex", alignItems: "center", gap: 12 },
   infoIcon:       { width: 36, height: 36, background: "rgba(255,255,255,0.15)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, color: "#fff", fontWeight: 700 },
   infoText:       { fontSize: 14, color: "rgba(255,255,255,0.85)" },
-  rightPanel:     { flex: 1, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: "48px", overflowY: "auto" },
+  rightPanel:    { marginLeft: "45vw", flex: 1, background: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "60px 48px", overflowY: "auto" },
   formBox:        { width: "100%", maxWidth: 480 },
   logoRow:        { display: "flex", alignItems: "center", gap: 10, marginBottom: 24 },
   logoDropSm:     { width: 30, height: 30, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center" },

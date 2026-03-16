@@ -17,6 +17,7 @@ export default function HomePage() {
           <button style={styles.navBtn} onClick={() => navigate("/login")}>Donor Login</button>
           <button style={styles.navBtn} onClick={() => navigate("/hospital-login")}>Hospital Login</button>
           <button style={styles.navBtnPrimary} onClick={() => navigate("/register")}>Register as Donor</button>
+          <button style={styles.navBtn} onClick={() => navigate("/hospital/register")}>Register Hospital</button>
         </nav>
       </header>
 
@@ -103,6 +104,7 @@ export default function HomePage() {
       <footer style={styles.footer}>
         <span>© 2026 HemoLink Rwanda · Built for Rwanda Biomedical Centre</span>
         <span>Kigali, Rwanda</span>
+        <button style={styles.adminLink} onClick={() => navigate("/admin/login")}>RBC Staff Login</button>
       </footer>
     </div>
   );
@@ -167,4 +169,5 @@ const styles = {
 
   // Footer
   footer:     { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 48px", background: "#fff", borderTop: "1px solid #DDD5D0", fontSize: 12, color: "#6B6B6B" },
+  adminLink:  { background: "none", border: "none", color: "#9B9B9B", fontSize: 11, cursor: "pointer", padding: 0 },
 };
