@@ -164,7 +164,7 @@ export default function HospitalRegisterPage() {
     <div style={styles.page}>
       {/* Left panel — image */}
       <div style={styles.leftPanel}>
-        <div style={styles.overlay} />
+
         <div style={styles.leftInner}>
           <button style={styles.backLink} onClick={() => navigate("/hospital-login")}>&larr; Back to Login</button>
           <div style={styles.logoRow}>
@@ -315,26 +315,26 @@ export default function HospitalRegisterPage() {
 }
 
 const styles = {
-  page:          { display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif" },
-  leftPanel:     { width: 360, flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflow: "hidden", backgroundImage: "url('https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=800&q=80')", backgroundSize: "cover", backgroundPosition: "center" },
-  overlay:       { position: "absolute", inset: 0, background: "linear-gradient(145deg, rgba(14,14,14,0.92) 0%, rgba(140,30,20,0.58) 100%)" },
-  leftInner:     { position: "relative", zIndex: 1, padding: "52px 40px", display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" },
-  backLink:      { background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 13, cursor: "pointer", marginBottom: 36, display: "block", padding: 0, textAlign: "left" },
-  logoRow:       { display: "flex", alignItems: "center", gap: 10, marginBottom: 24 },
-  logoDrop:      { width: 32, height: 32, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  logoDropText:  { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 12 },
-  logoTextWhite: { fontWeight: 800, fontSize: 17, color: "#fff", letterSpacing: -0.3 },
+  page:          { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" },
+  leftPanel:     { width: "35vw", flexShrink: 0, position: "fixed", top: 0, left: 0, height: "100vh", overflow: "hidden", background: "#1C1C1C", display: "flex", alignItems: "center", justifyContent: "center" },
+  overlay:       {},
+  leftInner:     { padding: "24px 28px", width: "100%", display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" },
+  backLink:      { background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 11.5, cursor: "pointer", marginBottom: 14, display: "block", padding: 0, textAlign: "left" },
+  logoRow:       { display: "flex", alignItems: "center", gap: 8, marginBottom: 12 },
+  logoDrop:      { width: 26, height: 26, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  logoDropText:  { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 10 },
+  logoTextWhite: { fontWeight: 800, fontSize: 14, color: "#fff", letterSpacing: -0.3 },
   logoAccent:    { color: "#E87B6E" },
-  leftTitle:     { fontSize: 30, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 14 },
+  leftTitle:     { fontSize: 20, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 8 },
   leftEm:        { fontStyle: "italic", fontWeight: 400, color: "#E87B6E" },
-  leftDesc:      { fontSize: 13.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.75, marginBottom: 28 },
-  featureList:   { display: "flex", flexDirection: "column", gap: 11, marginBottom: 28 },
-  featureItem:   { display: "flex", alignItems: "center", gap: 10 },
-  featureIcon:   { width: 24, height: 24, background: "rgba(255,255,255,0.1)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  featureText:   { fontSize: 13, color: "rgba(255,255,255,0.82)" },
-  approvalNote:  { display: "flex", alignItems: "flex-start", gap: 10, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 },
-  approvalDot:   { width: 8, height: 8, borderRadius: "50%", background: "#E87B6E", flexShrink: 0, marginTop: 3 },
-  rightPanel:    { flex: 1, background: "#fff", height: "100vh", overflowY: "auto", display: "flex", justifyContent: "center", padding: "48px" },
+  leftDesc:      { fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.55, marginBottom: 14 },
+  featureList:   { display: "flex", flexDirection: "column", gap: 7, marginBottom: 14 },
+  featureItem:   { display: "flex", alignItems: "center", gap: 8 },
+  featureIcon:   { width: 18, height: 18, background: "rgba(255,255,255,0.1)", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  featureText:   { fontSize: 11.5, color: "rgba(255,255,255,0.82)" },
+  approvalNote:  { display: "flex", alignItems: "flex-start", gap: 8, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 7, padding: "7px 10px", fontSize: 11, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 },
+  approvalDot:   { width: 6, height: 6, borderRadius: "50%", background: "#E87B6E", flexShrink: 0, marginTop: 3 },
+  rightPanel:    { marginLeft: "35vw", flex: 1, background: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "60px 48px", overflowY: "auto" },
   formBox:       { width: "100%", maxWidth: 560 },
   formLogoRow:   { display: "flex", alignItems: "center", gap: 10, marginBottom: 22 },
   logoText:      { fontWeight: 800, fontSize: 17, letterSpacing: -0.3, color: "#1C1C1C" },
