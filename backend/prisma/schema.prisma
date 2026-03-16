@@ -32,7 +32,7 @@ model Hospital {
   hospitalId   Int     @id @default(autoincrement()) @map("hospital_id")
   name         String
   phone        String  @unique
-  email        String  @unique                        // now required — used for login
+  email        String  @unique
   password     String
   provinceCode String  @map("province_code")
   districtCode String  @map("district_code")
@@ -41,7 +41,7 @@ model Hospital {
   village      String
   latitude     Float?
   longitude    Float?
-  isApproved   Boolean @default(false) @map("is_approved") // admin must approve before login works
+  isApproved   Boolean @default(false) @map("is_approved")
 
   province      Province       @relation(fields: [provinceCode], references: [provinceCode])
   district      District       @relation(fields: [districtCode], references: [districtCode])
@@ -115,6 +115,7 @@ model BloodRequest {
   urgencyLevel  String   @map("urgency_level")
   statusCode    String   @map("status_code")
   neededBy      DateTime @map("needed_by")
+  radiusKm      Float?   @map("radius_km")  // configurable search radius
 
   hospital      Hospital       @relation(fields: [hospitalId], references: [hospitalId])
   bloodType     BloodType      @relation(fields: [bloodTypeCode], references: [bloodTypeCode])
@@ -132,6 +133,7 @@ model Notification {
   sentAt             DateTime @map("sent_at")
   deliveryStatusCode String   @map("delivery_status_code")
   responseStatus     String?  @default("pending") @map("response_status")
+  smsMessage         String?  @map("sms_message")  // stores mock SMS content for admin panel
 
   bloodRequest       BloodRequest       @relation(fields: [requestId], references: [requestId])
   donor              Donor              @relation(fields: [donorId], references: [donorId])
