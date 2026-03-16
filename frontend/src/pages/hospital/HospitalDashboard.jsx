@@ -1,8 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../utils/AuthContext.jsx";
 import api from "../../utils/api.js";
-import { IconDashboard, IconBlood, IconBox, IconLogout, IconClock, IconCheckCircle, IconList, IconWarning, IconPlus } from "../../utils/Icons.jsx";
+import {
+  IconDashboard, IconBlood, IconBox, IconLogout,
+  IconClock, IconCheckCircle, IconList, IconWarning, IconPlus
+} from "../../utils/Icons.jsx";
+
+// Leaflet + heat — loaded lazily to avoid SSR issues
+let leafletLoaded = false;
 
 const NAV = [
   { label: "Dashboard", path: "/hospital/dashboard", Icon: IconDashboard },
@@ -16,18 +22,124 @@ function StatusBadge({ status }) {
   return <span style={{ background: bg, color, padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{status}</span>;
 }
 
+// Blood type color scale for inventory cards
+function stockColor(units) {
+  if (units === 0) return "#C0392B";
+  if (units < 5)  return "#E67E22";
+  if (units < 15) return "#F1C40F";
+  return "#1E8449";
+}
+function stockBg(units) {
+  if (units === 0) return "#FDEDEC";
+  if (units < 5)  return "#FEF9E7";
+  if (units < 15) return "#FDFBE7";
+  return "#EAFAF1";
+}
+
+// Leaflet donor map — bright light tiles + pin markers
+function DonorHeatmap({ donorLocations, hospitalLat = -1.9441, hospitalLng = 30.0619 }) {
+  const mapRef = useRef(null);
+  const instanceRef = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const initMap = async () => {
+      const L = (await import("leaflet")).default;
+      await import("leaflet/dist/leaflet.css");
+
+      if (instanceRef.current) {
+        instanceRef.current.remove();
+        instanceRef.current = null;
+      }
+
+      // Zoom out to see all of Rwanda if there are donors spread around
+      const zoom = donorLocations.length > 0 ? 9 : 9;
+
+      const map = L.map(mapRef.current, {
+        center: [-1.9403, 29.8739], // Centre of Rwanda
+        zoom,
+        zoomControl: true,
+        scrollWheelZoom: true,
+      });
+
+      // Bright, readable light tile (OpenStreetMap)
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18,
+      }).addTo(map);
+
+      // Hospital pin — red
+      const hospitalIcon = L.divIcon({
+        className: "",
+        html: `<div style="
+          width:18px;height:18px;
+          background:#C0392B;
+          border:3px solid #fff;
+          border-radius:50%;
+          box-shadow:0 2px 8px rgba(192,57,43,0.6)">
+        </div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      });
+      L.marker([hospitalLat, hospitalLng], { icon: hospitalIcon })
+        .addTo(map)
+        .bindPopup("<strong style='color:#C0392B'>🏥 Your Hospital</strong>")
+        .openPopup();
+
+      // Donor pins — blue circles like the screenshot
+      donorLocations.forEach(d => {
+        const donorIcon = L.divIcon({
+          className: "",
+          html: `<div style="
+            width:14px;height:14px;
+            background:#2980B9;
+            border:2.5px solid #fff;
+            border-radius:50%;
+            box-shadow:0 2px 6px rgba(41,128,185,0.5)">
+          </div>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        });
+        L.marker([d.latitude, d.longitude], { icon: donorIcon })
+          .addTo(map)
+          .bindPopup(`<strong>Donor</strong><br/>Blood type: ${d.bloodTypeCode || "Unknown"}`);
+      });
+
+      instanceRef.current = map;
+    };
+
+    initMap().catch(console.error);
+
+    return () => {
+      if (instanceRef.current) {
+        instanceRef.current.remove();
+        instanceRef.current = null;
+      }
+    };
+  }, [donorLocations, hospitalLat, hospitalLng]);
+
+  return <div ref={mapRef} style={{ width: "100%", height: "100%" }} />;
+}
+
 export default function HospitalDashboard() {
   const navigate         = useNavigate();
   const { user, logout } = useAuth();
-  const [requests,  setRequests]  = useState([]);
-  const [inventory, setInventory] = useState([]);
-  const [loading,   setLoading]   = useState(true);
+  const [requests,       setRequests]       = useState([]);
+  const [inventory,      setInventory]      = useState([]);
+  const [donorLocations, setDonorLocations] = useState([]);
+  const [loading,        setLoading]        = useState(true);
 
   useEffect(() => {
-    Promise.all([api.get("/requests"), api.get("/inventory")])
-      .then(([reqRes, invRes]) => {
+    Promise.all([
+      api.get("/requests"),
+      api.get("/inventory"),
+      api.get("/donors/locations").catch(() => ({ data: { data: [] } })),
+    ])
+      .then(([reqRes, invRes, locRes]) => {
         setRequests(reqRes.data.data  || []);
         setInventory(invRes.data.data || []);
+        setDonorLocations(locRes.data.data || []);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -40,10 +152,10 @@ export default function HospitalDashboard() {
   const handleLogout = () => { logout(); navigate("/hospital-login"); };
 
   const stats = [
-    { label: "Pending Requests",    value: pending,         color: "#E67E22", Icon: IconClock },
-    { label: "Fulfilled Requests",  value: fulfilled,       color: "#1E8449", Icon: IconCheckCircle },
-    { label: "Total Requests",      value: requests.length, color: "#2980B9", Icon: IconList },
-    { label: "Low Stock Types",     value: lowStock,        color: "#C0392B", Icon: IconWarning },
+    { label: "Pending Requests",   value: pending,         color: "#E67E22", Icon: IconClock },
+    { label: "Fulfilled",          value: fulfilled,       color: "#1E8449", Icon: IconCheckCircle },
+    { label: "Total Requests",     value: requests.length, color: "#2980B9", Icon: IconList },
+    { label: "Low Stock Alerts",   value: lowStock,        color: "#C0392B", Icon: IconWarning },
   ];
 
   return (
@@ -76,7 +188,7 @@ export default function HospitalDashboard() {
         <div style={styles.topBar}>
           <div>
             <h1 style={styles.pageTitle}>Dashboard</h1>
-            <p style={styles.pageSub}>Overview of your hospital's blood request activity.</p>
+            <p style={styles.pageSub}>Overview of your hospital's blood supply and request activity.</p>
           </div>
           <button style={styles.newRequestBtn} onClick={() => navigate("/hospital/requests/new")}>
             <IconPlus size={14} color="#fff" /> New Blood Request
@@ -84,10 +196,10 @@ export default function HospitalDashboard() {
         </div>
 
         {loading ? (
-          <div style={styles.loadingWrap}><div style={styles.spinner} /><p>Loading…</p></div>
+          <div style={styles.loadingWrap}><div style={styles.spinnerEl} /><p>Loading…</p></div>
         ) : (
           <>
-            {/* Stats */}
+            {/* Stats Row */}
             <div style={styles.statsGrid}>
               {stats.map(s => (
                 <div key={s.label} style={styles.statCard}>
@@ -100,42 +212,14 @@ export default function HospitalDashboard() {
               ))}
             </div>
 
-            {/* Recent requests */}
+            {/* ── BLOOD STOCK — full width, most important ─────────── */}
             <div style={styles.section}>
               <div style={styles.sectionHeader}>
-                <h2 style={styles.sectionTitle}>Recent Blood Requests</h2>
-                <button style={styles.seeAllBtn} onClick={() => navigate("/hospital/requests")}>See All</button>
-              </div>
-              {requests.length === 0 ? (
-                <div style={styles.empty}>
-                  No blood requests yet.{" "}
-                  <button style={styles.linkBtn} onClick={() => navigate("/hospital/requests/new")}>Create your first request</button>
+                <div>
+                  <h2 style={styles.sectionTitle}>Blood Stock</h2>
+                  <p style={styles.sectionSub}>Current inventory levels across all blood types</p>
                 </div>
-              ) : (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>{["Blood Type","Units","Urgency","Status","Needed By"].map(h => <th key={h} style={styles.th}>{h}</th>)}</tr>
-                  </thead>
-                  <tbody>
-                    {requests.slice(0, 5).map(r => (
-                      <tr key={r.requestId} style={styles.tr}>
-                        <td style={{ ...styles.td, fontWeight: 700, color: "#C0392B" }}>{r.bloodTypeCode}</td>
-                        <td style={styles.td}>{r.unitsNeeded}</td>
-                        <td style={styles.td}>{r.urgencyLevel}</td>
-                        <td style={styles.td}><StatusBadge status={r.statusCode} /></td>
-                        <td style={styles.td}>{new Date(r.neededBy).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            {/* Inventory snapshot */}
-            <div style={styles.section}>
-              <div style={styles.sectionHeader}>
-                <h2 style={styles.sectionTitle}>Inventory Snapshot</h2>
-                <button style={styles.seeAllBtn} onClick={() => navigate("/hospital/inventory")}>Manage</button>
+                <button style={styles.seeAllBtn} onClick={() => navigate("/hospital/inventory")}>Manage Inventory</button>
               </div>
               {inventory.length === 0 ? (
                 <div style={styles.empty}>
@@ -145,14 +229,46 @@ export default function HospitalDashboard() {
               ) : (
                 <div style={styles.inventoryGrid}>
                   {inventory.map(item => (
-                    <div key={item.bloodTypeCode} style={{ ...styles.inventoryCard, borderColor: item.unitsAvailable < 5 ? "#C0392B" : "#DDD5D0" }}>
+                    <div key={item.bloodTypeCode} style={{
+                      ...styles.inventoryCard,
+                      background: stockBg(item.unitsAvailable),
+                      borderColor: stockColor(item.unitsAvailable),
+                    }}>
                       <div style={styles.inventoryType}>{item.bloodTypeCode}</div>
-                      <div style={{ ...styles.inventoryUnits, color: item.unitsAvailable < 5 ? "#C0392B" : "#1E8449" }}>{item.unitsAvailable}</div>
+                      <div style={{ ...styles.inventoryUnits, color: stockColor(item.unitsAvailable) }}>
+                        {item.unitsAvailable}
+                      </div>
                       <div style={styles.inventoryLabel}>units</div>
+                      {item.unitsAvailable < 5 && <div style={styles.lowBadge}>LOW</div>}
                     </div>
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* ── DONOR MAP — full width ────────────────────────────── */}
+            <div style={styles.section}>
+              <div style={styles.sectionHeader}>
+                <div>
+                  <h2 style={styles.sectionTitle}>Donor Proximity Map</h2>
+                  <p style={styles.sectionSub}>
+                    <strong style={{ color: "#C0392B" }}>{donorLocations.length}</strong> available donors near your hospital
+                  </p>
+                </div>
+                <div style={styles.legendRow}>
+                  <div style={styles.legendItem}>
+                    <div style={{ ...styles.legendDot, background: "#C0392B" }} />
+                    <span style={styles.legendLabel}>Your hospital</span>
+                  </div>
+                  <div style={styles.legendItem}>
+                    <div style={{ ...styles.legendDot, background: "#2980B9" }} />
+                    <span style={styles.legendLabel}>Available donor</span>
+                  </div>
+                </div>
+              </div>
+              <div style={styles.mapWrap}>
+                <DonorHeatmap donorLocations={donorLocations} />
+              </div>
             </div>
           </>
         )}
@@ -162,43 +278,52 @@ export default function HospitalDashboard() {
 }
 
 const styles = {
-  shell:          { display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif", background: "#F7F3EF" },
-  sidebar:        { width: 220, background: "#1C1C1C", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" },
-  sidebarLogo:    { display: "flex", alignItems: "center", gap: 8, padding: "0 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)" },
-  logoDrop:       { width: 28, height: 28, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center" },
-  logoDropText:   { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 11 },
-  logoText:       { fontWeight: 800, fontSize: 16, color: "#fff" },
-  logoRed:        { color: "#C0392B" },
-  sidebarHospital:{ fontSize: 11, color: "rgba(255,255,255,0.4)", padding: "12px 20px 4px", textTransform: "uppercase", letterSpacing: 0.5 },
-  nav:            { flex: 1, display: "flex", flexDirection: "column", padding: "8px 12px", gap: 2 },
-  navItem:        { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 14, cursor: "pointer", borderRadius: 8, textAlign: "left" },
-  navItemActive:  { background: "rgba(192,57,43,0.25)", color: "#fff", fontWeight: 600 },
-  logoutBtn:      { display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", padding: "16px 20px", textAlign: "left" },
-  main:           { flex: 1, padding: "32px 40px", overflowY: "auto", height: "100vh" },
-  topBar:         { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 },
-  pageTitle:      { fontSize: 24, fontWeight: 800, color: "#1C1C1C", marginBottom: 4 },
-  pageSub:        { fontSize: 14, color: "#6B6B6B" },
-  newRequestBtn:  { display: "flex", alignItems: "center", gap: 6, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" },
-  loadingWrap:    { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 300, gap: 16, color: "#6B6B6B" },
-  spinner:        { width: 32, height: 32, border: "3px solid #DDD5D0", borderTopColor: "#C0392B", borderRadius: "50%" },
-  statsGrid:      { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 },
-  statCard:       { background: "#fff", border: "1px solid #DDD5D0", borderRadius: 14, padding: "20px", textAlign: "center" },
-  statIconWrap:   { width: 48, height: 48, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" },
-  statNum:        { fontSize: 30, fontWeight: 800, marginBottom: 4 },
-  statLabel:      { fontSize: 12, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: 0.4 },
-  section:        { background: "#fff", border: "1px solid #DDD5D0", borderRadius: 14, padding: "24px", marginBottom: 20 },
-  sectionHeader:  { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-  sectionTitle:   { fontSize: 16, fontWeight: 700, color: "#1C1C1C" },
-  seeAllBtn:      { background: "none", border: "none", color: "#C0392B", fontWeight: 600, fontSize: 13, cursor: "pointer" },
-  table:          { width: "100%", borderCollapse: "collapse" },
-  th:             { textAlign: "left", fontSize: 11, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: 0.5, padding: "8px 12px", borderBottom: "1px solid #DDD5D0" },
-  tr:             { borderBottom: "1px solid #F2EDE8" },
-  td:             { padding: "12px", fontSize: 14, color: "#1C1C1C" },
-  empty:          { fontSize: 14, color: "#6B6B6B", textAlign: "center", padding: "32px 0" },
-  linkBtn:        { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 14 },
-  inventoryGrid:  { display: "flex", gap: 12, flexWrap: "wrap" },
-  inventoryCard:  { border: "2px solid", borderRadius: 12, padding: "14px 18px", textAlign: "center", minWidth: 76 },
-  inventoryType:  { fontSize: 18, fontWeight: 800, color: "#1C1C1C", marginBottom: 4 },
-  inventoryUnits: { fontSize: 26, fontWeight: 800 },
-  inventoryLabel: { fontSize: 11, color: "#6B6B6B", textTransform: "uppercase" },
+  shell:           { display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif", background: "#F7F3EF" },
+  sidebar:         { width: 220, background: "#1C1C1C", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" },
+  sidebarLogo:     { display: "flex", alignItems: "center", gap: 8, padding: "0 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)" },
+  logoDrop:        { width: 28, height: 28, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center" },
+  logoDropText:    { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 11 },
+  logoText:        { fontWeight: 800, fontSize: 16, color: "#fff" },
+  logoRed:         { color: "#C0392B" },
+  sidebarHospital: { fontSize: 11, color: "rgba(255,255,255,0.4)", padding: "12px 20px 4px", textTransform: "uppercase", letterSpacing: 0.5 },
+  nav:             { flex: 1, display: "flex", flexDirection: "column", padding: "8px 12px", gap: 2 },
+  navItem:         { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 14, cursor: "pointer", borderRadius: 8, textAlign: "left" },
+  navItemActive:   { background: "rgba(192,57,43,0.25)", color: "#fff", fontWeight: 600 },
+  logoutBtn:       { display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", padding: "16px 20px", textAlign: "left" },
+  main:            { flex: 1, padding: "32px 40px", overflowY: "auto", height: "100vh" },
+  topBar:          { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 },
+  pageTitle:       { fontSize: 24, fontWeight: 800, color: "#1C1C1C", marginBottom: 4 },
+  pageSub:         { fontSize: 14, color: "#6B6B6B" },
+  newRequestBtn:   { display: "flex", alignItems: "center", gap: 6, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" },
+  loadingWrap:     { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 300, gap: 16, color: "#6B6B6B" },
+  spinnerEl:       { width: 32, height: 32, border: "3px solid #DDD5D0", borderTopColor: "#C0392B", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
+  statsGrid:       { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 },
+  statCard:        { background: "#fff", border: "1px solid #EBE5E0", borderRadius: 14, padding: "20px", textAlign: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" },
+  statIconWrap:    { width: 48, height: 48, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" },
+  statNum:         { fontSize: 30, fontWeight: 800, marginBottom: 4 },
+  statLabel:       { fontSize: 12, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: 0.4 },
+  section:         { background: "#fff", border: "1px solid #EBE5E0", borderRadius: 14, padding: "24px", marginBottom: 20, boxShadow: "0 4px 12px rgba(0,0,0,0.03)" },
+  sectionHeader:   { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 },
+  sectionTitle:    { fontSize: 17, fontWeight: 800, color: "#1C1C1C", marginBottom: 4 },
+  sectionSub:      { fontSize: 13, color: "#8E8E8E" },
+  seeAllBtn:       { background: "none", border: "none", color: "#C0392B", fontWeight: 600, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" },
+  table:           { width: "100%", borderCollapse: "collapse" },
+  th:              { textAlign: "left", fontSize: 11, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: 0.5, padding: "8px 12px", borderBottom: "1px solid #EBE5E0" },
+  tr:              { borderBottom: "1px solid #F2EDE8" },
+  td:              { padding: "12px", fontSize: 14, color: "#1C1C1C" },
+  empty:           { fontSize: 14, color: "#6B6B6B", textAlign: "center", padding: "32px 0" },
+  linkBtn:         { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 14 },
+  inventoryGrid:   { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 12 },
+  inventoryCard:   { border: "2px solid", borderRadius: 12, padding: "16px 12px", textAlign: "center", position: "relative" },
+  inventoryType:   { fontSize: 20, fontWeight: 800, color: "#1C1C1C", marginBottom: 6 },
+  inventoryUnits:  { fontSize: 30, fontWeight: 800, lineHeight: 1 },
+  inventoryLabel:  { fontSize: 11, color: "#6B6B6B", textTransform: "uppercase", marginTop: 4 },
+  lowBadge:        { position: "absolute", top: 6, right: 6, background: "#C0392B", color: "#fff", fontSize: 9, fontWeight: 800, borderRadius: 4, padding: "2px 5px", letterSpacing: 0.5 },
+  mapWrap:         { height: 460, borderRadius: 12, overflow: "hidden", border: "1px solid #EBE5E0" },
+  legendRow:       { display: "flex", alignItems: "center", gap: 14 },
+  legendItem:      { display: "flex", alignItems: "center", gap: 6 },
+  legendDot:       { width: 10, height: 10, borderRadius: "50%" },
+  legendLabel:     { fontSize: 12, color: "#6B6B6B" },
+  twoColRow:       { display: "flex", gap: 20, marginBottom: 20, alignItems: "stretch", minHeight: 420 },
+  bottomRow:       { display: "flex", gap: 20, alignItems: "stretch" },
 };

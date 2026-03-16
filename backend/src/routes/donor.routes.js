@@ -6,6 +6,7 @@ const {
   getProfile,
   updateProfile,
   updateAvailability,
+  getDonorLocations,
 } = require("../controllers/donor.controller");
 
 const router = Router();
@@ -202,5 +203,19 @@ router.put("/profile", authenticate, authorize("donor"), updateProfile);
  *         description: Unauthorized
  */
 router.put("/availability", authenticate, authorize("donor"), updateAvailability);
+
+/**
+ * @swagger
+ * /api/donors/locations:
+ *   get:
+ *     summary: Get available donor locations (hospital use only)
+ *     tags: [Donors]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of available donor lat/lng points
+ */
+router.get("/locations", authenticate, authorize("hospital"), getDonorLocations);
 
 module.exports = router;
