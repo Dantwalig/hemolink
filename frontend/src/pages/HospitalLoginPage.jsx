@@ -96,7 +96,7 @@ export default function HospitalLoginPage() {
 
       {/* Left — full bleed hospital photo */}
       <div style={styles.leftPanel}>
-        <div style={styles.overlay} />
+
         <div style={styles.leftInner}>
           <button style={styles.backLink} onClick={() => navigate("/")}>
             &larr; Back to Home
@@ -191,28 +191,24 @@ export default function HospitalLoginPage() {
 }
 
 const styles = {
-  page:          { display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif" },
-  leftPanel:     {
-    flex: 1, position: "sticky", top: 0, height: "100vh", overflow: "hidden",
-    backgroundImage: "url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=900&q=80')",
-    backgroundSize: "cover", backgroundPosition: "center",
-  },
-  overlay:       { position: "absolute", inset: 0, background: "linear-gradient(145deg, rgba(14,14,14,0.90) 0%, rgba(140,30,20,0.60) 100%)" },
-  leftInner:     { position: "relative", zIndex: 1, padding: "60px 48px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 460 },
-  backLink:      { background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 13, cursor: "pointer", marginBottom: 40, display: "block", padding: 0, textAlign: "left" },
-  logoRow:       { display: "flex", alignItems: "center", gap: 10, marginBottom: 28 },
+  page:          { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" },
+  leftPanel:     { width: "45vw", flexShrink: 0, position: "fixed", top: 0, left: 0, height: "100vh", overflow: "hidden", background: "#1C1C1C", display: "flex", alignItems: "center", justifyContent: "center" },
+  overlay:       {},
+  leftInner:     { padding: "28px 40px", width: "100%", maxWidth: 460, display: "flex", flexDirection: "column", justifyContent: "center" },
+  backLink:      { background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer", marginBottom: 20, display: "block", padding: 0, textAlign: "left" },
+  logoRow:       { display: "flex", alignItems: "center", gap: 10, marginBottom: 16 },
   logoDrop:      { width: 32, height: 32, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   logoDropText:  { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 12 },
   logoTextWhite: { fontWeight: 800, fontSize: 17, color: "#fff", letterSpacing: -0.3 },
   logoAccent:    { color: "#E87B6E" },
-  leftTitle:     { fontSize: 36, fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 16 },
+  leftTitle:     { fontSize: 26, fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 10 },
   leftEm:        { fontStyle: "italic", fontWeight: 400, color: "#E87B6E" },
-  leftDesc:      { fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.75, marginBottom: 32 },
-  featureList:   { display: "flex", flexDirection: "column", gap: 12 },
+  leftDesc:      { fontSize: 12.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, marginBottom: 18 },
+  featureList:   { display: "flex", flexDirection: "column", gap: 8 },
   featureItem:   { display: "flex", alignItems: "center", gap: 12 },
   featureIcon:   { width: 24, height: 24, background: "rgba(255,255,255,0.12)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  featureText:   { fontSize: 13.5, color: "rgba(255,255,255,0.85)" },
-  rightPanel:    { flex: 1, background: "#fff", height: "100vh", overflowY: "auto", display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 48px" },
+  featureText:   { fontSize: 12, color: "rgba(255,255,255,0.85)" },
+  rightPanel:    { marginLeft: "45vw", flex: 1, background: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "60px 48px", overflowY: "auto" },
   formBox:       { width: "100%", maxWidth: 420 },
   formLogoRow:   { display: "flex", alignItems: "center", gap: 10, marginBottom: 28 },
   logoText:      { fontWeight: 800, fontSize: 17, letterSpacing: -0.3, color: "#1C1C1C" },
