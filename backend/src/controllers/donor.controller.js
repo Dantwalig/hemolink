@@ -136,4 +136,18 @@ const updateAvailability = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getProfile, updateProfile, updateAvailability };
+// Returns available donor locations for hospital heatmap view
+const getDonorLocations = async (req, res, next) => {
+  try {
+    const donors = await prisma.donor.findMany({
+      where: { available: true },
+      select: { donorId: true, latitude: true, longitude: true, bloodTypeCode: true },
+    });
+    return success(res, donors, "Donor locations retrieved.");
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { register, login, getProfile, updateProfile, updateAvailability, getDonorLocations };
+
