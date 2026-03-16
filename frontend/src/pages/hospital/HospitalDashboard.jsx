@@ -36,7 +36,7 @@ function stockBg(units) {
   return "#EAFAF1";
 }
 
-// Leaflet heatmap component
+// Leaflet donor map — bright light tiles + pin markers
 function DonorHeatmap({ donorLocations, hospitalLat = -1.9441, hospitalLng = 30.0619 }) {
   const mapRef = useRef(null);
   const instanceRef = useRef(null);
@@ -45,48 +45,66 @@ function DonorHeatmap({ donorLocations, hospitalLat = -1.9441, hospitalLng = 30.
     if (!mapRef.current) return;
 
     const initMap = async () => {
-      // Dynamic import so Vite bundles it properly
       const L = (await import("leaflet")).default;
       await import("leaflet/dist/leaflet.css");
-      await import("leaflet.heat");
 
       if (instanceRef.current) {
         instanceRef.current.remove();
+        instanceRef.current = null;
       }
 
+      // Zoom out to see all of Rwanda if there are donors spread around
+      const zoom = donorLocations.length > 0 ? 9 : 9;
+
       const map = L.map(mapRef.current, {
-        center: [hospitalLat, hospitalLng],
-        zoom: 11,
+        center: [-1.9403, 29.8739], // Centre of Rwanda
+        zoom,
         zoomControl: true,
+        scrollWheelZoom: true,
       });
 
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
+      // Bright, readable light tile (OpenStreetMap)
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 18,
       }).addTo(map);
 
-      // Hospital marker
+      // Hospital pin — red
       const hospitalIcon = L.divIcon({
         className: "",
-        html: `<div style="width:16px;height:16px;background:#C0392B;border:3px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(192,57,43,0.8)"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8],
+        html: `<div style="
+          width:18px;height:18px;
+          background:#C0392B;
+          border:3px solid #fff;
+          border-radius:50%;
+          box-shadow:0 2px 8px rgba(192,57,43,0.6)">
+        </div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
       });
       L.marker([hospitalLat, hospitalLng], { icon: hospitalIcon })
         .addTo(map)
-        .bindPopup("<strong>Your Hospital</strong>")
+        .bindPopup("<strong style='color:#C0392B'>🏥 Your Hospital</strong>")
         .openPopup();
 
-      // Heatmap layer
-      if (donorLocations.length > 0) {
-        const heatData = donorLocations.map(d => [d.latitude, d.longitude, 0.8]);
-        L.heatLayer(heatData, {
-          radius: 35,
-          blur: 20,
-          maxZoom: 14,
-          gradient: { 0.0: "#1a1aff", 0.4: "#00ccff", 0.6: "#00ff88", 0.8: "#ffaa00", 1.0: "#ff2200" },
-        }).addTo(map);
-      }
+      // Donor pins — blue circles like the screenshot
+      donorLocations.forEach(d => {
+        const donorIcon = L.divIcon({
+          className: "",
+          html: `<div style="
+            width:14px;height:14px;
+            background:#2980B9;
+            border:2.5px solid #fff;
+            border-radius:50%;
+            box-shadow:0 2px 6px rgba(41,128,185,0.5)">
+          </div>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        });
+        L.marker([d.latitude, d.longitude], { icon: donorIcon })
+          .addTo(map)
+          .bindPopup(`<strong>Donor</strong><br/>Blood type: ${d.bloodTypeCode || "Unknown"}`);
+      });
 
       instanceRef.current = map;
     };
@@ -101,7 +119,7 @@ function DonorHeatmap({ donorLocations, hospitalLat = -1.9441, hospitalLng = 30.
     };
   }, [donorLocations, hospitalLat, hospitalLng]);
 
-  return <div ref={mapRef} style={{ width: "100%", height: "100%", borderRadius: 12 }} />;
+  return <div ref={mapRef} style={{ width: "100%", height: "100%" }} />;
 }
 
 export default function HospitalDashboard() {
@@ -230,7 +248,7 @@ export default function HospitalDashboard() {
 
             {/* ── DONOR MAP — full width ────────────────────────────── */}
             <div style={styles.section}>
-              <div style={{ ...styles.sectionHeader, marginBottom: 16 }}>
+              <div style={styles.sectionHeader}>
                 <div>
                   <h2 style={styles.sectionTitle}>Donor Proximity Map</h2>
                   <p style={styles.sectionSub}>
@@ -238,12 +256,14 @@ export default function HospitalDashboard() {
                   </p>
                 </div>
                 <div style={styles.legendRow}>
-                  {["Low","Medium","High"].map((t, i) => (
-                    <div key={t} style={styles.legendItem}>
-                      <div style={{ ...styles.legendDot, background: ["#1a88ff","#ffaa00","#ff2200"][i] }} />
-                      <span style={styles.legendLabel}>{t} density</span>
-                    </div>
-                  ))}
+                  <div style={styles.legendItem}>
+                    <div style={{ ...styles.legendDot, background: "#C0392B" }} />
+                    <span style={styles.legendLabel}>Your hospital</span>
+                  </div>
+                  <div style={styles.legendItem}>
+                    <div style={{ ...styles.legendDot, background: "#2980B9" }} />
+                    <span style={styles.legendLabel}>Available donor</span>
+                  </div>
                 </div>
               </div>
               <div style={styles.mapWrap}>
