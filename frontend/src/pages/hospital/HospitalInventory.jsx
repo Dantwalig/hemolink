@@ -55,6 +55,15 @@ export default function HospitalInventory() {
 
   return (
     <div style={styles.shell}>
+      {/* Global reset for double-scroll fix */}
+      <style>{`
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw; background: #F7F3EF; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #bbb; }
+      `}</style>
       <aside style={styles.sidebar}>
         <div style={styles.sidebarLogo}>
           <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
@@ -137,19 +146,19 @@ export default function HospitalInventory() {
 
 const styles = {
   shell:          { display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif", background: "#F7F3EF" },
-  sidebar:        { width: 220, background: "#1C1C1C", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" },
+  sidebar:        { width: 220, background: "#1C1C1C", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0, position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 100 },
   sidebarLogo:    { display: "flex", alignItems: "center", gap: 8, padding: "0 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)" },
   logoDrop:       { width: 28, height: 28, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center" },
   logoDropText:   { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 11 },
   logoText:       { fontWeight: 800, fontSize: 16, color: "#fff" },
   logoRed:        { color: "#C0392B" },
   sidebarHospital:{ fontSize: 11, color: "rgba(255,255,255,0.4)", padding: "12px 20px 4px", textTransform: "uppercase", letterSpacing: 0.5 },
-  nav:            { flex: 1, display: "flex", flexDirection: "column", padding: "8px 12px", gap: 2 },
+  nav:            { flex: 1, display: "flex", flexDirection: "column", padding: "8px 12px", gap: 2, overflowY: "auto" },
   navItem:        { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 14, cursor: "pointer", borderRadius: 8, textAlign: "left" },
   navItemActive:  { background: "rgba(192,57,43,0.25)", color: "#fff", fontWeight: 600 },
-  logoutBtn:      { display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", padding: "16px 20px" },
-  main:           { flex: 1, padding: "32px 40px", overflowY: "auto", height: "100vh" },
-  topBar:         { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 },
+  logoutBtn:      { display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", padding: "16px 20px", textAlign: "left", marginTop: "auto", borderTop: "1px solid rgba(255,255,255,0.05)" },
+  main:           { flex: 1, padding: "40px 40px 32px", marginLeft: 220, overflowY: "auto", height: "100vh", display: "flex", flexDirection: "column" },
+  topBar:         { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 },
   pageTitle:      { fontSize: 24, fontWeight: 800, color: "#1C1C1C", marginBottom: 4 },
   pageSub:        { fontSize: 14, color: "#6B6B6B" },
   alertError:     { background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A", borderRadius: 9, padding: "12px 16px", marginBottom: 16, fontSize: 13 },
