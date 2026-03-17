@@ -37,75 +37,61 @@ function stockBg(units) {
 }
 
 // Leaflet donor map — bright light tiles + pin markers
-function DonorHeatmap({ donorLocations, hospitalLat = -1.9441, hospitalLng = 30.0619 }) {
+function DonorHeatmap({ donorLocations, hospitalName = "Your Hospital", hospitalLat, hospitalLng }) {
   const mapRef = useRef(null);
   const instanceRef = useRef(null);
+  const markerLayerRef = useRef(null);
+  const hasAutoFitted = useRef(false);
 
+  const hasLocation = hospitalLat != null && hospitalLng != null;
+
+  // Small random offset so markers at same spot don't hide each other
+  const jitter = (n) => n + (Math.random() - 0.5) * 0.0001;
+
+  // 1. Initialize Map (Once)
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !hasLocation || instanceRef.current) return;
 
     const initMap = async () => {
       const L = (await import("leaflet")).default;
       await import("leaflet/dist/leaflet.css");
 
-      if (instanceRef.current) {
-        instanceRef.current.remove();
-        instanceRef.current = null;
-      }
-
-      // Zoom out to see all of Rwanda if there are donors spread around
-      const zoom = donorLocations.length > 0 ? 9 : 9;
+      if (instanceRef.current) return;
 
       const map = L.map(mapRef.current, {
-        center: [-1.9403, 29.8739], // Centre of Rwanda
-        zoom,
+        center: [hospitalLat, hospitalLng],
+        zoom: 16, 
         zoomControl: true,
         scrollWheelZoom: true,
       });
 
-      // Bright, readable light tile (OpenStreetMap)
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 20, // Allow extreme closeups
       }).addTo(map);
 
-      // Hospital pin — red
+      // Hospital pin — Red Pin
       const hospitalIcon = L.divIcon({
         className: "",
-        html: `<div style="
-          width:18px;height:18px;
-          background:#C0392B;
-          border:3px solid #fff;
-          border-radius:50%;
-          box-shadow:0 2px 8px rgba(192,57,43,0.6)">
-        </div>`,
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
+        html: `
+          <svg width="34" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+            <path d="M12 0C7.58 0 4 3.58 4 8C4 13.5 12 24 12 24C12 24 20 13.5 20 8C20 3.58 16.42 0 12 0Z" fill="#C0392B"/>
+            <circle cx="12" cy="8" r="3" fill="white"/>
+          </svg>
+        `,
+        iconSize: [34, 44],
+        iconAnchor: [17, 44],
+        popupAnchor: [0, -44]
       });
-      L.marker([hospitalLat, hospitalLng], { icon: hospitalIcon })
+      L.marker([hospitalLat, hospitalLng], { 
+        icon: hospitalIcon,
+        zIndexOffset: 0 
+      })
         .addTo(map)
-        .bindPopup("<strong style='color:#C0392B'>🏥 Your Hospital</strong>")
+        .bindPopup(`<strong style='color:#C0392B'> ${hospitalName}</strong>`)
         .openPopup();
 
-      // Donor pins — blue circles like the screenshot
-      donorLocations.forEach(d => {
-        const donorIcon = L.divIcon({
-          className: "",
-          html: `<div style="
-            width:14px;height:14px;
-            background:#2980B9;
-            border:2.5px solid #fff;
-            border-radius:50%;
-            box-shadow:0 2px 6px rgba(41,128,185,0.5)">
-          </div>`,
-          iconSize: [14, 14],
-          iconAnchor: [7, 7],
-        });
-        L.marker([d.latitude, d.longitude], { icon: donorIcon })
-          .addTo(map)
-          .bindPopup(`<strong>Donor</strong><br/>Blood type: ${d.bloodTypeCode || "Unknown"}`);
-      });
-
+      markerLayerRef.current = L.layerGroup().addTo(map);
       instanceRef.current = map;
     };
 
@@ -117,7 +103,71 @@ function DonorHeatmap({ donorLocations, hospitalLat = -1.9441, hospitalLng = 30.
         instanceRef.current = null;
       }
     };
+  }, [hasLocation, hospitalLat, hospitalLng, hospitalName]);
+
+  // 2. Update Markers (When donorLocations change)
+  useEffect(() => {
+    const updateMarkers = async () => {
+      if (!instanceRef.current || !markerLayerRef.current) return;
+
+      const L = (await import("leaflet")).default;
+      const map = instanceRef.current;
+      const layer = markerLayerRef.current;
+
+      layer.clearLayers();
+      const boundsPoints = [[hospitalLat, hospitalLng]];
+
+      donorLocations.forEach(d => {
+        // Apply jitter so stacked donors are clickable
+        const latlng = [jitter(d.latitude), jitter(d.longitude)];
+        boundsPoints.push(latlng);
+
+        const donorIcon = L.divIcon({
+          className: "",
+          html: `
+            <svg width="30" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+              <path d="M12 0C7.58 0 4 3.58 4 8C4 13.5 12 24 12 24C12 24 20 13.5 20 8C20 3.58 16.42 0 12 0Z" fill="#3498db"/>
+              <circle cx="12" cy="8" r="3" fill="white"/>
+            </svg>
+          `,
+          iconSize: [30, 40],
+          iconAnchor: [15, 40],
+          popupAnchor: [0, -40]
+        });
+
+        L.marker(latlng, { 
+          icon: donorIcon,
+          zIndexOffset: 1000 
+        })
+          .addTo(layer)
+          .bindPopup(`Donor: ${d.bloodTypeCode || "Unknown"}`);
+      });
+
+      // Only auto-position ONCE to prevent "snapping"
+      if (!hasAutoFitted.current && donorLocations.length > 0) {
+        if (boundsPoints.length > 1) {
+          const bounds = L.latLngBounds(boundsPoints);
+          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+        } else {
+          map.setView([hospitalLat, hospitalLng], 16);
+        }
+        hasAutoFitted.current = true;
+      }
+    };
+
+    updateMarkers().catch(console.error);
   }, [donorLocations, hospitalLat, hospitalLng]);
+
+  if (!hasLocation) {
+    return (
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#F7F3EF", borderRadius: 12, gap: 8 }}>
+        <p style={{ fontSize: 14, color: "#6B6B6B", textAlign: "center", margin: 0 }}>
+          No GPS coordinates on record for this hospital.<br />
+          <span style={{ fontSize: 12, color: "#9B9B9B" }}>Contact your administrator to update your location.</span>
+        </p>
+      </div>
+    );
+  }
 
   return <div ref={mapRef} style={{ width: "100%", height: "100%" }} />;
 }
@@ -267,7 +317,12 @@ export default function HospitalDashboard() {
                 </div>
               </div>
               <div style={styles.mapWrap}>
-                <DonorHeatmap donorLocations={donorLocations} />
+                <DonorHeatmap
+                  donorLocations={donorLocations}
+                  hospitalName={user?.name}
+                  hospitalLat={user?.latitude}
+                  hospitalLng={user?.longitude}
+                />
               </div>
             </div>
           </>

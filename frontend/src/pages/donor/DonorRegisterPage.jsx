@@ -136,8 +136,9 @@ export default function DonorRegisterPage() {
   const validateStep1 = () => {
     const fields = ["fullName", "phone", "bloodType"];
     const errs   = Object.fromEntries(fields.map((f) => [f, validators[f]?.(form[f]) ?? ""]));
+    if (locationStatus !== "granted") errs.location = "Please share your location to continue.";
     setErrors((e) => ({ ...e, ...errs }));
-    setTouched((t) => ({ ...t, ...Object.fromEntries(fields.map((f) => [f, true])) }));
+    setTouched((t) => ({ ...t, ...Object.fromEntries(fields.map((f) => [f, true])), location: true }));
     return !Object.values(errs).some(Boolean);
   };
 
@@ -164,8 +165,8 @@ export default function DonorRegisterPage() {
         phone:         form.phone,
         password:      form.password,
         bloodTypeCode: form.bloodType,
-        latitude:      form.latitude  ?? 0,
-        longitude:     form.longitude ?? 0,
+        latitude:      form.latitude,
+        longitude:     form.longitude,
         consentSms:    form.consentSms,
       });
       setDone(true);
@@ -267,15 +268,18 @@ export default function DonorRegisterPage() {
                 </SelectField>
               </Field>
 
-              <div style={styles.availRow}>
+              <div style={{ ...styles.availRow, ...(touched.location && errors.location ? { borderLeft: "3px solid #C0392B", background: "#fff8f8" } : {}) }}>
                 <div>
-                  <div style={styles.availLabel}>📍 Share your location</div>
+                  <div style={styles.availLabel}>📍 Share your location<span style={styles.required}> *</span></div>
                   <div style={styles.availSub}>
                     {locationStatus === "idle"    && "Required so hospitals can find nearby donors."}
                     {locationStatus === "loading" && "Getting your location…"}
                     {locationStatus === "granted" && `✅ Saved (${form.latitude?.toFixed(4)}, ${form.longitude?.toFixed(4)})`}
-                    {locationStatus === "denied"  && "⚠ Location denied. Please enable in browser."}
+                    {locationStatus === "denied"  && "⚠ Location denied. Please enable browser location access."}
                   </div>
+                  {touched.location && errors.location && (
+                    <span style={{ ...styles.errorMsg, display: "block", marginTop: 4 }}>⚠ {errors.location}</span>
+                  )}
                 </div>
                 {locationStatus !== "granted" && (
                   <button type="button"
