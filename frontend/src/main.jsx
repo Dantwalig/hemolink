@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./utils/AuthContext.jsx";
+import { LangProvider } from "./utils/LangContext.jsx";
 
 import HomePage             from "./pages/HomePage.jsx";
 import LoginPage            from "./pages/LoginPage.jsx";
@@ -34,58 +35,60 @@ function ProtectedRoute({ children, role }) {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public */}
-          <Route path="/"                   element={<HomePage />} />
-          <Route path="/login"              element={<LoginPage />} />
-          <Route path="/register"           element={<DonorRegisterPage />} />
-          <Route path="/hospital-login"     element={<HospitalLoginPage />} />
-          <Route path="/hospital/register"  element={<HospitalRegisterPage />} />
-          <Route path="/admin/login"        element={<AdminLoginPage />} />
-          <Route path="/donor/respond"      element={<DonorRespondPage />} />
+    <LangProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public */}
+            <Route path="/"                   element={<HomePage />} />
+            <Route path="/login"              element={<LoginPage />} />
+            <Route path="/register"           element={<DonorRegisterPage />} />
+            <Route path="/hospital-login"     element={<HospitalLoginPage />} />
+            <Route path="/hospital/register"  element={<HospitalRegisterPage />} />
+            <Route path="/admin/login"        element={<AdminLoginPage />} />
+            <Route path="/donor/respond"      element={<DonorRespondPage />} />
 
-          {/* Donor protected */}
-          <Route path="/donor/dashboard" element={
-            <ProtectedRoute role="donor"><DonorDashboard /></ProtectedRoute>
-          } />
+            {/* Donor protected */}
+            <Route path="/donor/dashboard" element={
+              <ProtectedRoute role="donor"><DonorDashboard /></ProtectedRoute>
+            } />
 
-          {/* Hospital protected */}
-          <Route path="/hospital/dashboard" element={
-            <ProtectedRoute role="hospital"><HospitalDashboard /></ProtectedRoute>
-          } />
-          <Route path="/hospital/requests" element={
-            <ProtectedRoute role="hospital"><HospitalRequests /></ProtectedRoute>
-          } />
-          <Route path="/hospital/requests/new" element={
-            <ProtectedRoute role="hospital"><NewRequest /></ProtectedRoute>
-          } />
-          <Route path="/hospital/inventory" element={
-            <ProtectedRoute role="hospital"><HospitalInventory /></ProtectedRoute>
-          } />
+            {/* Hospital protected */}
+            <Route path="/hospital/dashboard" element={
+              <ProtectedRoute role="hospital"><HospitalDashboard /></ProtectedRoute>
+            } />
+            <Route path="/hospital/requests" element={
+              <ProtectedRoute role="hospital"><HospitalRequests /></ProtectedRoute>
+            } />
+            <Route path="/hospital/requests/new" element={
+              <ProtectedRoute role="hospital"><NewRequest /></ProtectedRoute>
+            } />
+            <Route path="/hospital/inventory" element={
+              <ProtectedRoute role="hospital"><HospitalInventory /></ProtectedRoute>
+            } />
 
-          {/* Admin protected */}
-          <Route path="/admin/dashboard" element={
-            <ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>
-          } />
-          <Route path="/admin/hospitals" element={
-            <ProtectedRoute role="admin"><AdminHospitals /></ProtectedRoute>
-          } />
-          <Route path="/admin/donors" element={
-            <ProtectedRoute role="admin"><AdminDonors /></ProtectedRoute>
-          } />
-          <Route path="/admin/sms" element={
-            <ProtectedRoute role="admin"><AdminSmsLog /></ProtectedRoute>
-          } />
-          <Route path="/admin/requests" element={
-            <ProtectedRoute role="admin"><AdminRequests /></ProtectedRoute>
-          } />
+            {/* Admin protected */}
+            <Route path="/admin/dashboard" element={
+              <ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>
+            } />
+            <Route path="/admin/hospitals" element={
+              <ProtectedRoute role="admin"><AdminHospitals /></ProtectedRoute>
+            } />
+            <Route path="/admin/donors" element={
+              <ProtectedRoute role="admin"><AdminDonors /></ProtectedRoute>
+            } />
+            <Route path="/admin/sms" element={
+              <ProtectedRoute role="admin"><AdminSmsLog /></ProtectedRoute>
+            } />
+            <Route path="/admin/requests" element={
+              <ProtectedRoute role="admin"><AdminRequests /></ProtectedRoute>
+            } />
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </LangProvider>
   </React.StrictMode>
 );

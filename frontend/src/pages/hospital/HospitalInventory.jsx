@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../utils/AuthContext.jsx";
 import api from "../../utils/api.js";
-import { IconDashboard, IconBlood, IconBox, IconLogout, IconWarning } from "../../utils/Icons.jsx";
+import HospitalShell from "./HospitalShell.jsx";
 
-const NAV = [
-  { label: "Dashboard", path: "/hospital/dashboard", Icon: IconDashboard },
-  { label: "Requests",  path: "/hospital/requests",  Icon: IconBlood },
-  { label: "Inventory", path: "/hospital/inventory", Icon: IconBox },
-];
+const ALL_TYPES = ["A+","A-","B+","B-","AB+","AB-","O+","O-"];
+const BLOOD_COLORS = { "O+":"#C0392B","O-":"#922B21","A+":"#E67E22","A-":"#B7560F","B+":"#2E86C1","B-":"#1A5276","AB+":"#8E44AD","AB-":"#6C3483" };
 
-const ALL_BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+function stockMeta(u) {
+  if (u===0) return { label:"Out of Stock", color:"#C0392B", bg:"rgba(192,57,43,.1)", barColor:"#C0392B" };
+  if (u<5)   return { label:"Critically Low", color:"#E67E22", bg:"rgba(230,126,34,.1)", barColor:"#E67E22" };
+  if (u<15)  return { label:"Low",            color:"#D4A017", bg:"rgba(212,160,23,.1)", barColor:"#D4A017" };
+  return       { label:"Good",            color:"#1E8449", bg:"rgba(30,132,73,.1)",   barColor:"#1E8449" };
+}
 
 export default function HospitalInventory() {
-  const navigate         = useNavigate();
-  const { user, logout } = useAuth();
   const [inventory, setInventory] = useState({});
   const [editing,   setEditing]   = useState({});
   const [saving,    setSaving]    = useState(null);
@@ -34,138 +32,106 @@ export default function HospitalInventory() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSave = async (bloodTypeCode) => {
-    const units = parseInt(editing[bloodTypeCode], 10);
+  const handleSave = async (bt) => {
+    const units = parseInt(editing[bt], 10);
     if (isNaN(units) || units < 0) { setError("Units must be a non-negative number."); return; }
-    setSaving(bloodTypeCode);
-    setError("");
+    setSaving(bt); setError("");
     try {
-      await api.put(`/inventory/${bloodTypeCode}`, { unitsAvailable: units });
-      setInventory(prev => ({ ...prev, [bloodTypeCode]: units }));
-      setSaved(bloodTypeCode);
-      setTimeout(() => setSaved(null), 2000);
+      await api.put(`/inventory/${bt}`, { unitsAvailable: units });
+      setInventory(prev => ({ ...prev, [bt]: units }));
+      setSaved(bt);
+      setTimeout(() => setSaved(null), 2200);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to save.");
-    } finally {
-      setSaving(null);
-    }
+    } finally { setSaving(null); }
   };
 
-  const handleLogout = () => { logout(); navigate("/hospital-login"); };
+  const totalUnits = Object.values(inventory).reduce((sum, v) => sum + (v||0), 0);
+  const criticalTypes = ALL_TYPES.filter(bt => (inventory[bt]||0) < 5);
 
   return (
-    <div style={styles.shell}>
-      <aside style={styles.sidebar}>
-        <div style={styles.sidebarLogo}>
-          <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
-          <span style={styles.logoText}>Hemo<span style={styles.logoRed}>Link</span></span>
+    <HospitalShell title="Blood Inventory" subtitle="Manage and update your current blood stock levels.">
+      {error && <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:20, fontWeight:500 }}>{error}</div>}
+
+      {/* Summary bar */}
+      <div style={{ display:"flex", gap:16, marginBottom:28, flexWrap:"wrap" }}>
+        <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:14, padding:"16px 22px", flex:1, minWidth:140 }}>
+          <div style={{ fontSize:28, fontWeight:900, color:"#C0392B", fontFamily:"'Lora',serif" }}>{totalUnits}</div>
+          <div style={{ fontSize:12, color:"#9B7B77", fontWeight:500, marginTop:4 }}>Total units on hand</div>
         </div>
-        <div style={styles.sidebarHospital}>{user?.name || "Hospital"}</div>
-        <nav style={styles.nav}>
-          {NAV.map(({ label, path, Icon }) => (
-            <button key={path}
-              style={{ ...styles.navItem, ...(window.location.pathname === path ? styles.navItemActive : {}) }}
-              onClick={() => navigate(path)}>
-              <Icon size={16} color={window.location.pathname === path ? "#fff" : "rgba(255,255,255,0.6)"} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-        <button style={styles.logoutBtn} onClick={handleLogout}>
-          <IconLogout size={14} color="rgba(255,255,255,0.4)" /><span>Log Out</span>
-        </button>
-      </aside>
-
-      <main style={styles.main}>
-        <div style={styles.topBar}>
-          <div>
-            <h1 style={styles.pageTitle}>Blood Inventory</h1>
-            <p style={styles.pageSub}>Track and update your hospital's blood stock levels.</p>
-          </div>
+        <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:14, padding:"16px 22px", flex:1, minWidth:140 }}>
+          <div style={{ fontSize:28, fontWeight:900, color:criticalTypes.length>0?"#C0392B":"#1E8449", fontFamily:"'Lora',serif" }}>{criticalTypes.length}</div>
+          <div style={{ fontSize:12, color:"#9B7B77", fontWeight:500, marginTop:4 }}>Blood types critically low</div>
         </div>
-
-        {error && <div style={styles.alertError}>{error}</div>}
-
-        {loading ? (
-          <div style={styles.loadingWrap}><div style={styles.spinner} /><p>Loading…</p></div>
-        ) : (
-          <div style={styles.grid}>
-            {ALL_BLOOD_TYPES.map(bt => {
-              const units   = inventory[bt] ?? 0;
-              const editVal = editing[bt] !== undefined ? editing[bt] : units;
-              const isLow   = units < 5;
-              const isSaved = saved === bt;
-              const isSaving= saving === bt;
-              return (
-                <div key={bt} style={{ ...styles.card, borderColor: isLow ? "#C0392B" : "#DDD5D0" }}>
-                  <div style={styles.cardTop}>
-                    <div style={{ ...styles.bloodType, color: isLow ? "#C0392B" : "#1C1C1C" }}>{bt}</div>
-                    {isLow && (
-                      <span style={styles.lowBadge}>
-                        <IconWarning size={11} color="#C0392B" /> Low
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ ...styles.unitDisplay, color: isLow ? "#C0392B" : "#1E8449" }}>
-                    {units}<span style={styles.unitLabel}> units</span>
-                  </div>
-                  <div style={styles.editRow}>
-                    <input type="number" min="0" value={editVal}
-                      onChange={e => setEditing(prev => ({ ...prev, [bt]: e.target.value }))}
-                      style={styles.unitInput} />
-                    <button
-                      style={{ ...styles.saveBtn, ...(isSaved ? styles.savedBtn : {}), ...(isSaving ? styles.savingBtn : {}) }}
-                      onClick={() => handleSave(bt)}
-                      disabled={isSaving || String(editVal) === String(units)}>
-                      {isSaving ? "…" : isSaved ? "Saved" : "Save"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+        {criticalTypes.length>0 && (
+          <div style={{ background:"rgba(192,57,43,.06)", border:"1.5px solid rgba(192,57,43,.2)", borderRadius:14, padding:"16px 22px", flex:2, minWidth:200, display:"flex", alignItems:"center", gap:12 }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L2 17h16L10 2z" stroke="#C0392B" strokeWidth="1.6" strokeLinejoin="round"/><path d="M10 9v4M10 15.5v.5" stroke="#C0392B" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:"#C0392B", marginBottom:3 }}>Critical shortage</div>
+              <div style={{ fontSize:12, color:"#7A4A45" }}>{criticalTypes.join(", ")} — restock urgently</div>
+            </div>
           </div>
         )}
+      </div>
 
-        <div style={styles.legend}>
-          <IconWarning size={13} color="#C0392B" />
-          <span>Red border indicates fewer than 5 units available (low stock)</span>
+      {loading ? (
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:240, gap:16 }}>
+          <div style={{ width:32, height:32, border:"3px solid #F0E0DC", borderTopColor:"#C0392B", borderRadius:"50%", animation:"hl-spin .75s linear infinite" }}/>
+          <span style={{ color:"#7A4A45" }}>Loading inventory…</span>
         </div>
-      </main>
-    </div>
+      ) : (
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16 }}>
+          {ALL_TYPES.map(bt => {
+            const units = inventory[bt] ?? 0;
+            const editVal = editing[bt] ?? units;
+            const meta = stockMeta(units);
+            const color = BLOOD_COLORS[bt]||"#C0392B";
+            const pct = Math.min((units/30)*100, 100);
+            const isSaving = saving===bt;
+            const justSaved = saved===bt;
+            const changed = editVal !== units;
+
+            return (
+              <div key={bt} style={{ background:"#fff", border:`1.5px solid ${changed?"#C0392B":"#F0E0DC"}`, borderRadius:18, padding:"22px", display:"flex", flexDirection:"column", gap:14, boxShadow:"0 4px 12px rgba(140,20,20,.04)", transition:"all .2s" }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <span style={{ fontSize:28, fontWeight:900, color, fontFamily:"'Lora',serif" }}>{bt}</span>
+                  <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20, background:meta.bg, color:meta.color }}>{meta.label}</span>
+                </div>
+
+                {/* Bar */}
+                <div style={{ background:"#F0E0DC", borderRadius:6, height:8, overflow:"hidden" }}>
+                  <div style={{ width:`${pct}%`, height:"100%", background:meta.barColor, borderRadius:6, transition:"width .6s ease" }}/>
+                </div>
+
+                {/* Input */}
+                <div>
+                  <label style={{ display:"block", fontSize:11, fontWeight:700, color:"#7A4A45", textTransform:"uppercase", letterSpacing:.6, marginBottom:6 }}>Units Available</label>
+                  <input
+                    type="number" min="0" value={editVal}
+                    onChange={e => setEditing(prev => ({ ...prev, [bt]: e.target.value }))}
+                    style={{ width:"100%", padding:"10px 12px", border:`1.5px solid ${changed?"#C0392B":"#E8D5D0"}`, borderRadius:9, fontSize:16, fontWeight:700, fontFamily:"'Sora',sans-serif", color:"#1a0a07", textAlign:"center", transition:"border-color .18s" }}
+                  />
+                </div>
+
+                <button
+                  onClick={()=>handleSave(bt)}
+                  disabled={isSaving || !changed}
+                  style={{
+                    padding:"10px", borderRadius:10, fontSize:13, fontWeight:700, fontFamily:"'Sora',sans-serif", cursor:isSaving||!changed?"not-allowed":"pointer", transition:"all .18s",
+                    background: justSaved ? "linear-gradient(135deg,#1E8449,#145A32)" : changed ? "linear-gradient(135deg,#C0392B,#8B1A1A)" : "#F8EDEB",
+                    color: changed||justSaved ? "#fff" : "#BBA0A0",
+                    border: "none",
+                    boxShadow: changed ? "0 4px 12px rgba(192,57,43,.3)" : "none",
+                    opacity: isSaving ? .65 : 1,
+                  }}
+                >
+                  {isSaving ? "Saving…" : justSaved ? "Saved!" : changed ? "Save Changes" : "No Changes"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </HospitalShell>
   );
 }
-
-const styles = {
-  shell:          { display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif", background: "#F7F3EF" },
-  sidebar:        { width: 220, background: "#1C1C1C", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" },
-  sidebarLogo:    { display: "flex", alignItems: "center", gap: 8, padding: "0 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)" },
-  logoDrop:       { width: 28, height: 28, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center" },
-  logoDropText:   { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 11 },
-  logoText:       { fontWeight: 800, fontSize: 16, color: "#fff" },
-  logoRed:        { color: "#C0392B" },
-  sidebarHospital:{ fontSize: 11, color: "rgba(255,255,255,0.4)", padding: "12px 20px 4px", textTransform: "uppercase", letterSpacing: 0.5 },
-  nav:            { flex: 1, display: "flex", flexDirection: "column", padding: "8px 12px", gap: 2 },
-  navItem:        { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 14, cursor: "pointer", borderRadius: 8, textAlign: "left" },
-  navItemActive:  { background: "rgba(192,57,43,0.25)", color: "#fff", fontWeight: 600 },
-  logoutBtn:      { display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", padding: "16px 20px" },
-  main:           { flex: 1, padding: "32px 40px", overflowY: "auto", height: "100vh" },
-  topBar:         { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 },
-  pageTitle:      { fontSize: 24, fontWeight: 800, color: "#1C1C1C", marginBottom: 4 },
-  pageSub:        { fontSize: 14, color: "#6B6B6B" },
-  alertError:     { background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A", borderRadius: 9, padding: "12px 16px", marginBottom: 16, fontSize: 13 },
-  loadingWrap:    { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 300, gap: 16, color: "#6B6B6B" },
-  spinner:        { width: 32, height: 32, border: "3px solid #DDD5D0", borderTopColor: "#C0392B", borderRadius: "50%" },
-  grid:           { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 },
-  card:           { background: "#fff", border: "2px solid #DDD5D0", borderRadius: 14, padding: "18px", display: "flex", flexDirection: "column", gap: 10 },
-  cardTop:        { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  bloodType:      { fontSize: 24, fontWeight: 800 },
-  lowBadge:       { display: "flex", alignItems: "center", gap: 3, fontSize: 11, background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A", borderRadius: 10, padding: "2px 7px", fontWeight: 600 },
-  unitDisplay:    { fontSize: 32, fontWeight: 800 },
-  unitLabel:      { fontSize: 13, color: "#6B6B6B", fontWeight: 400 },
-  editRow:        { display: "flex", gap: 8 },
-  unitInput:      { flex: 1, padding: "7px 10px", border: "1.5px solid #DDD5D0", borderRadius: 7, fontSize: 14, fontFamily: "'DM Sans', sans-serif", color: "#1C1C1C", outline: "none" },
-  saveBtn:        { padding: "7px 14px", background: "#C0392B", color: "#fff", border: "none", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" },
-  savedBtn:       { background: "#1E8449" },
-  savingBtn:      { background: "#ccc", cursor: "not-allowed" },
-  legend:         { marginTop: 20, fontSize: 12, color: "#6B6B6B", display: "flex", alignItems: "center", gap: 6 },
-};

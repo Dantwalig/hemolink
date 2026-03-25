@@ -1,205 +1,269 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../utils/api";
-import { useAuth } from "../utils/AuthContext";
+import api from "../utils/api.js";
+import { useAuth } from "../utils/AuthContext.jsx";
+import { useLang } from "../utils/LangContext.jsx";
+import LanguageSwitcher from "../utils/LanguageSwitcher.jsx";
 
-const validators = {
-  phone(value) {
-    if (!value.trim()) return "Phone number is required.";
-    const cleaned = value.replace(/[\s\-]/g, "");
-    if (!/^(\+?250|0)[7][2389]\d{7}$/.test(cleaned))
-      return "Enter a valid Rwanda phone number (e.g. 0788123456).";
-    return "";
-  },
-  password(value) {
-    if (!value) return "Password is required.";
-    return "";
-  },
-};
-
-function Field({ label, required, error, helper, children }) {
+function LogoDrop({ size = 34 }) {
   return (
-    <div style={styles.field}>
-      <label style={styles.label}>{label}{required && <span style={styles.required}> *</span>}</label>
-      {children}
-      {error  && <span style={styles.errorMsg}>⚠ {error}</span>}
-      {!error && helper && <span style={styles.helperMsg}>{helper}</span>}
+    <div style={{width:size,height:size,background:"linear-gradient(135deg,#C0392B,#8B1A1A)",borderRadius:"50% 50% 50% 0",transform:"rotate(-45deg)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 14px rgba(192,57,43,.38)",flexShrink:0}}>
+      <span style={{transform:"rotate(45deg)",color:"#fff",fontWeight:900,fontSize:size*.38,fontFamily:"'Sora',sans-serif",lineHeight:1}}>H</span>
     </div>
   );
 }
 
-function InputField({ icon, type = "text", value, onChange, onBlur, error, placeholder, autoComplete }) {
-  const [showPw, setShowPw] = useState(false);
-  const isPassword   = type === "password";
-  const resolvedType = isPassword ? (showPw ? "text" : "password") : type;
-  const borderColor  = error ? "#C0392B" : value ? "#1E8449" : "#DDD5D0";
-  const bg           = error ? "#fff8f8" : "#fff";
-  return (
-    <div style={styles.inputWrap}>
-      {icon && <span style={styles.inputIcon}>{icon}</span>}
-      <input type={resolvedType} value={value} onChange={onChange} onBlur={onBlur}
-        placeholder={placeholder} autoComplete={autoComplete}
-        style={{ ...styles.input, borderColor, background: bg, paddingLeft: icon ? 38 : 14 }}
-      />
-      {isPassword && (
-        <button type="button" style={styles.togglePw} onClick={() => setShowPw((s) => !s)}>
-          {showPw ? "🙈" : "👁"}
-        </button>
-      )}
-    </div>
-  );
-}
+const EyeIcon = ({ open }) => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    {open ? (
+      <>
+        <path d="M1 9s3-5.5 8-5.5S17 9 17 9s-3 5.5-8 5.5S1 9 1 9z" stroke="#9B7B77" strokeWidth="1.4"/>
+        <circle cx="9" cy="9" r="2.5" stroke="#9B7B77" strokeWidth="1.4"/>
+      </>
+    ) : (
+      <>
+        <path d="M1 9s3-5.5 8-5.5S17 9 17 9s-3 5.5-8 5.5S1 9 1 9z" stroke="#9B7B77" strokeWidth="1.4"/>
+        <circle cx="9" cy="9" r="2.5" stroke="#9B7B77" strokeWidth="1.4"/>
+        <path d="M2 2l14 14" stroke="#9B7B77" strokeWidth="1.4" strokeLinecap="round"/>
+      </>
+    )}
+  </svg>
+);
+
+const PhoneIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <rect x="3" y="1" width="10" height="14" rx="2" stroke="#9B7B77" strokeWidth="1.3"/>
+    <circle cx="8" cy="12" r="1" fill="#9B7B77"/>
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <rect x="3" y="7" width="10" height="8" rx="1.5" stroke="#9B7B77" strokeWidth="1.3"/>
+    <path d="M5 7V5a3 3 0 016 0v2" stroke="#9B7B77" strokeWidth="1.3"/>
+    <circle cx="8" cy="11" r="1" fill="#9B7B77"/>
+  </svg>
+);
 
 export default function LoginPage() {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useLang();
 
-  const [form,        setForm]        = useState({ phone: "", password: "" });
-  const [errors,      setErrors]      = useState({});
-  const [touched,     setTouched]     = useState({});
-  const [loading,     setLoading]     = useState(false);
+  const [form, setForm] = useState({ phone: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
-  const [forgotSent,  setForgotSent]  = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
-  const set = (field, val) => {
-    setForm((f) => ({ ...f, [field]: val }));
-    if (touched[field]) setErrors((e) => ({ ...e, [field]: validators[field]?.(val) ?? "" }));
+  const validate = {
+    phone: (v) => {
+      if (!v.trim()) return t("login.errorPhone");
+      const c = v.replace(/[\s\-]/g,"");
+      if (!/^(\+?250|0)[7][2389]\d{7}$/.test(c)) return t("login.errorPhone");
+      return "";
+    },
+    password: (v) => v ? "" : t("login.errorPassword"),
   };
 
-  const touch = (field) => {
-    setTouched((t) => ({ ...t, [field]: true }));
-    setErrors((e) => ({ ...e, [field]: validators[field]?.(form[field]) ?? "" }));
+  const set = (f, v) => {
+    setForm(x=>({...x,[f]:v}));
+    if (touched[f]) setErrors(e=>({...e,[f]:validate[f]?.(v)||""}));
+  };
+  const touch = (f) => {
+    setTouched(t=>({...t,[f]:true}));
+    setErrors(e=>({...e,[f]:validate[f]?.(form[f])||""}));
   };
 
-  const validateAll = () => {
-    const errs = { phone: validators.phone(form.phone), password: validators.password(form.password) };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errs = { phone: validate.phone(form.phone), password: validate.password(form.password) };
     setErrors(errs);
-    setTouched({ phone: true, password: true });
-    return !Object.values(errs).some(Boolean);
-  };
-
-  const handleLogin = async () => {
-    if (!validateAll()) return;
+    setTouched({ phone:true, password:true });
+    if (Object.values(errs).some(Boolean)) return;
     setLoading(true);
     setServerError("");
     try {
-      const res = await api.post("/donors/login", { phone: form.phone, password: form.password });
-      // FIX #2: backend wraps response in { success, message, data }
-      // so donor and token live at res.data.data, not res.data
-      const { donor, token } = res.data.data;
-      login({ ...donor, role: "donor" }, token);
+      const res = await api.post("/donors/login", { phone: form.phone.replace(/[\s\-]/g,""), password: form.password });
+      login(res.data.data.donor, res.data.data.token);
       navigate("/donor/dashboard");
     } catch (err) {
-      setServerError(err.response?.data?.message || "Login failed. Check your credentials.");
+      setServerError(err.response?.data?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleForgot = async () => {
-    const err = validators.phone(form.phone);
-    if (err) { setErrors((e) => ({ ...e, phone: err })); setTouched((t) => ({ ...t, phone: true })); return; }
-    setForgotSent(true); // SMS reset not yet implemented in backend — silently acknowledge
-  };
+  const inp = (hasErr, val) => ({
+    width:"100%", padding:"13px 14px 13px 40px",
+    border:`1.5px solid ${hasErr ? "#C0392B" : val ? "#1E8449" : "#E8D5D0"}`,
+    borderRadius:10, fontSize:14, fontFamily:"'Sora',sans-serif",
+    background: hasErr ? "#fff8f8" : "#fff",
+    color:"#1a0a07", outline:"none",
+    transition:"border-color .18s",
+  });
 
   return (
-    <div style={styles.page}>
-      <div style={styles.leftPanel}>
-        <div style={styles.leftInner}>
-          <button style={styles.backLink} onClick={() => navigate("/")}>← Back to Home</button>
-          <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
-          <h1 style={styles.leftTitle}>Welcome back, <em style={styles.leftEm}>donor.</em></h1>
-          <p style={styles.leftDesc}>
-            Log in to manage your availability, view your donation history, and stay ready
-            for emergency SMS alerts from hospitals near you.
-          </p>
-          <div style={styles.leftCard}>
-            <span style={{ fontSize: 28 }}>🩸</span>
-            <div>
-              <div style={styles.leftCardTitle}>Your blood type is needed.</div>
-              <div style={styles.leftCardSub}>Hospitals in Kigali are looking for compatible donors right now.</div>
+    <div style={S.page}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800;900&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;}
+        @keyframes bloodFall{0%{transform:translateY(-40px);opacity:0;}8%{opacity:.5;}90%{opacity:.25;}100%{transform:translateY(100vh);opacity:0;}}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+        .hl-submit{width:100%;padding:14px;background:linear-gradient(135deg,#C0392B,#8B1A1A);color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;box-shadow:0 6px 20px rgba(192,57,43,.38);transition:all .2s;margin-top:4px;}
+        .hl-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 28px rgba(192,57,43,.48);}
+        .hl-submit:disabled{opacity:.65;cursor:not-allowed;}
+        .hl-link{background:none;border:none;color:#C0392B;font-weight:600;cursor:pointer;font-size:13px;padding:0;font-family:'Sora',sans-serif;text-decoration:underline;text-underline-offset:2px;}
+        .hl-link:hover{color:#8B1A1A;}
+        .hl-back{background:none;border:1.5px solid #E8D5D0;border-radius:9px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;color:#7A4A45;font-family:'Sora',sans-serif;transition:all .18s;}
+        .hl-back:hover{border-color:#C0392B;color:#C0392B;}
+        input::placeholder{color:#BBA0A0;}
+        input:focus{border-color:#C0392B !important;box-shadow:0 0 0 3px rgba(192,57,43,.1);}
+      `}</style>
+
+      {/* Decorative left panel */}
+      <div style={S.panel}>
+        <div style={S.panelDrops}>
+          {[[15,0],[35,1.5],[55,3],[75,0.8],[95,2.3]].map(([t,d],i)=>(
+            <div key={i} style={{position:"absolute",left:`${t}%`,top:0,animation:`bloodFall 5s ${d}s ease-in infinite`}}>
+              <svg width="14" height="18" viewBox="0 0 20 26" fill="none">
+                <path d="M10 1C10 1 2 10 2 16a8 8 0 0 0 16 0C18 10 10 1 10 1z" fill="rgba(255,255,255,.2)"/>
+              </svg>
             </div>
+          ))}
+        </div>
+        <div style={S.panelContent}>
+          <div style={{marginBottom:40}}>
+            <div style={S.panelDropIcon}>
+              <svg width="100" height="124" viewBox="0 0 180 220" fill="none" style={{filter:"drop-shadow(0 10px 30px rgba(0,0,0,.3))"}}>
+                <path d="M90 10C90 10 20 90 20 140a70 70 0 0 0 140 0C160 90 90 10 90 10z" fill="rgba(255,255,255,.15)"/>
+                <path d="M55 148a35 35 0 0 0 35 35" stroke="rgba(255,255,255,.2)" strokeWidth="3" strokeLinecap="round"/>
+                <text x="90" y="166" textAnchor="middle" fill="white" fontSize="52" fontWeight="900" fontFamily="'Sora',sans-serif" opacity=".9">H</text>
+              </svg>
+            </div>
+            <h2 style={{fontSize:26,fontWeight:800,color:"#fff",marginBottom:10}}>Donor Portal</h2>
+            <p style={{fontSize:14,color:"rgba(255,255,255,.65)",lineHeight:1.7,maxWidth:280}}>
+              Your donation can save up to 3 lives. Rwanda's emergency blood network is counting on you.
+            </p>
+          </div>
+          <div style={S.panelStats}>
+            {[["58K+","Registered Donors"],["<60s","Alert Response"],["24/7","Emergency Ready"]].map(([n,l],i)=>(
+              <div key={i} style={S.panelStat}>
+                <span style={{fontSize:20,fontWeight:800,color:"#fff"}}>{n}</span>
+                <span style={{fontSize:11,color:"rgba(255,255,255,.55)",textTransform:"uppercase",letterSpacing:.7,marginTop:3}}>{l}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div style={styles.rightPanel}>
-        <div style={styles.formBox}>
-          <h2 style={styles.formTitle}>Donor Login</h2>
-          <p style={styles.formSub}>Enter your registered phone number and password.</p>
+      {/* Form panel */}
+      <div style={S.formPanel}>
+        <div style={S.formHeader}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <LogoDrop size={32}/>
+            <span style={{fontWeight:800,fontSize:17,color:"#1a0a07"}}>Hemo<span style={{color:"#C0392B"}}>Link</span></span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <LanguageSwitcher />
+            <button className="hl-back" onClick={() => navigate("/")}>{t("login.backHome")}</button>
+          </div>
+        </div>
 
-          {serverError && <div style={{ ...styles.alert, ...styles.alertError }}>❌ {serverError}</div>}
-          {forgotSent  && <div style={{ ...styles.alert, ...styles.alertSuccess }}>✅ If your number is registered, you'll receive an SMS with reset instructions.</div>}
-
-          <Field label="Phone Number" required error={touched.phone && errors.phone} helper="e.g. 0788123456">
-            <InputField icon="📱" value={form.phone} placeholder="0788 123 456"
-              onChange={(e) => set("phone", e.target.value)} onBlur={() => touch("phone")}
-              error={touched.phone && errors.phone} autoComplete="tel" />
-          </Field>
-
-          <Field label="Password" required error={touched.password && errors.password}>
-            <InputField icon="🔒" type="password" value={form.password} placeholder="Your password"
-              onChange={(e) => set("password", e.target.value)} onBlur={() => touch("password")}
-              error={touched.password && errors.password} autoComplete="current-password" />
-          </Field>
-
-          <button style={styles.forgotLink} onClick={handleForgot} disabled={loading}>
-            Forgot password? Reset via SMS →
-          </button>
-
-          <button style={{ ...styles.submitBtn, ...(loading ? styles.submitDisabled : {}) }}
-            onClick={handleLogin} disabled={loading}>
-            {loading ? <><span style={styles.spinner} />&nbsp;Signing in…</> : "Log In →"}
-          </button>
-
-          <div style={styles.divider}>
-            <hr style={styles.dividerLine} /><span style={styles.dividerText}>or</span><hr style={styles.dividerLine} />
+        <div style={{...S.formCard, animation:"fadeInUp .6s ease both"}}>
+          <div style={S.formTop}>
+            <h1 style={S.formTitle}>{t("login.title")}</h1>
+            <p style={S.formSub}>{t("login.subtitle")}</p>
           </div>
 
-          <p style={styles.switchLink}>Not registered yet? <button style={styles.linkBtn} onClick={() => navigate("/register")}>Create a donor account</button></p>
-          <p style={styles.switchLink}>Are you a hospital? <button style={styles.linkBtn} onClick={() => navigate("/hospital-login")}>Hospital login →</button></p>
+          {serverError && (
+            <div style={S.alert}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#C0392B" strokeWidth="1.4"/><path d="M8 5v3M8 10.5v.5" stroke="#C0392B" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              {serverError}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={{display:"flex",flexDirection:"column",gap:20}}>
+            {/* Phone */}
+            <div>
+              <label style={S.label}>{t("login.phone")} <span style={{color:"#C0392B"}}>*</span></label>
+              <div style={{position:"relative"}}>
+                <span style={S.inputIcon}><PhoneIcon/></span>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={e=>set("phone",e.target.value)}
+                  onBlur={()=>touch("phone")}
+                  placeholder={t("login.phonePlaceholder")}
+                  autoComplete="tel"
+                  style={inp(errors.phone && touched.phone, form.phone)}
+                />
+              </div>
+              {errors.phone && touched.phone && <span style={S.err}>{errors.phone}</span>}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label style={S.label}>{t("login.password")} <span style={{color:"#C0392B"}}>*</span></label>
+              <div style={{position:"relative"}}>
+                <span style={S.inputIcon}><LockIcon/></span>
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={form.password}
+                  onChange={e=>set("password",e.target.value)}
+                  onBlur={()=>touch("password")}
+                  placeholder={t("login.passwordPlaceholder")}
+                  autoComplete="current-password"
+                  style={{...inp(errors.password && touched.password, form.password), paddingRight:44}}
+                />
+                <button type="button" style={S.eyeBtn} onClick={()=>setShowPw(p=>!p)} tabIndex={-1}>
+                  <EyeIcon open={showPw}/>
+                </button>
+              </div>
+              {errors.password && touched.password && <span style={S.err}>{errors.password}</span>}
+            </div>
+
+            <button type="submit" className="hl-submit" disabled={loading}>
+              {loading ? t("login.loggingIn") : t("login.submit")}
+            </button>
+          </form>
+
+          <div style={{textAlign:"center",marginTop:24,fontSize:13,color:"#7A4A45"}}>
+            {t("login.noAccount")}{" "}
+            <button className="hl-link" onClick={() => navigate("/register")}>{t("login.register")}</button>
+          </div>
+
+          <div style={S.divider}/>
+          <div style={{textAlign:"center",fontSize:13,color:"#7A4A45"}}>
+            <button className="hl-link" style={{color:"#9B7B77"}} onClick={() => navigate("/hospital-login")}>
+              {t("nav.hospitalLogin")} →
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-const styles = {
-  page:           { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" },
-  leftPanel:     { width: "45vw", flexShrink: 0, position: "fixed", top: 0, left: 0, height: "100vh", overflow: "hidden", background: "#C0392B", display: "flex", alignItems: "center", justifyContent: "center" },
-  leftInner:      { maxWidth: 420, width: "100%", padding: "32px 40px", display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" },
-  backLink:       { background: "none", border: "none", color: "rgba(255,255,255,0.7)", fontSize: 12, cursor: "pointer", marginBottom: 16, display: "block", padding: 0, textAlign: "left" },
-  logoDrop:       { width: 36, height: 36, background: "rgba(255,255,255,0.2)", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 },
-  logoDropText:   { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 18 },
-  leftTitle:      { fontSize: 26, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 10 },
-  leftEm:         { fontStyle: "italic", fontWeight: 400, color: "rgba(255,255,255,0.75)" },
-  leftDesc:       { fontSize: 13, color: "rgba(255,255,255,0.82)", lineHeight: 1.6, marginBottom: 20 },
-  leftCard:       { background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "flex-start", gap: 10 },
-  leftCardTitle:  { fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 },
-  leftCardSub:    { fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 },
-  rightPanel:    { marginLeft: "45vw", flex: 1, background: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "60px 48px", overflowY: "auto" },
-  formBox:        { width: "100%", maxWidth: 420 },
-  formTitle:      { fontSize: 26, fontWeight: 800, color: "#1C1C1C", marginBottom: 6 },
-  formSub:        { fontSize: 14, color: "#6B6B6B", marginBottom: 28, lineHeight: 1.5 },
-  field:          { display: "flex", flexDirection: "column", gap: 6, marginBottom: 18 },
-  label:          { fontSize: 13, fontWeight: 500, color: "#1C1C1C" },
-  required:       { color: "#C0392B" },
-  errorMsg:       { fontSize: 12, color: "#C0392B" },
-  helperMsg:      { fontSize: 12, color: "#6B6B6B" },
-  inputWrap:      { position: "relative", display: "flex", alignItems: "center" },
-  inputIcon:      { position: "absolute", left: 13, fontSize: 15, pointerEvents: "none", zIndex: 1 },
-  input:          { width: "100%", padding: "11px 14px 11px 38px", border: "1.5px solid #DDD5D0", borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1C1C1C", outline: "none", transition: "border-color 0.2s", boxSizing: "border-box" },
-  togglePw:       { position: "absolute", right: 12, background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4 },
-  alert:          { padding: "12px 16px", borderRadius: 9, fontSize: 13.5, marginBottom: 20, lineHeight: 1.5 },
-  alertSuccess:   { background: "#EAFAF1", color: "#1E8449", border: "1px solid #A9DFBF" },
-  alertError:     { background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A" },
-  submitBtn:      { width: "100%", padding: 13, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 },
-  submitDisabled: { background: "#ccc", cursor: "not-allowed" },
-  forgotLink:     { background: "none", border: "none", color: "#C0392B", fontSize: 12, fontWeight: 500, cursor: "pointer", textAlign: "right", width: "100%", marginTop: -8, marginBottom: 14, display: "block" },
-  spinner:        { width: 18, height: 18, border: "2.5px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block" },
-  divider:        { display: "flex", alignItems: "center", gap: 12, margin: "20px 0" },
-  dividerLine:    { flex: 1, border: "none", borderTop: "1px solid #DDD5D0" },
-  dividerText:    { fontSize: 12, color: "#6B6B6B", whiteSpace: "nowrap" },
-  switchLink:     { textAlign: "center", fontSize: 13, color: "#6B6B6B", marginTop: 10 },
-  linkBtn:        { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 13 },
+const S = {
+  page:{display:"flex",minHeight:"100vh",fontFamily:"'Sora',sans-serif",background:"#FDF4F2"},
+  panel:{width:340,background:"linear-gradient(160deg,#C0392B 0%,#7D1212 100%)",position:"relative",overflow:"hidden",flexShrink:0,display:"flex",flexDirection:"column"},
+  panelDrops:{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"},
+  panelContent:{position:"relative",zIndex:1,padding:"48px 36px",display:"flex",flexDirection:"column",justifyContent:"center",height:"100%"},
+  panelDropIcon:{marginBottom:24},
+  panelStats:{display:"flex",flexDirection:"column",gap:16},
+  panelStat:{display:"flex",flexDirection:"column",padding:"14px 18px",background:"rgba(255,255,255,.1)",borderRadius:12,border:"1px solid rgba(255,255,255,.15)"},
+  formPanel:{flex:1,display:"flex",flexDirection:"column"},
+  formHeader:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 40px",background:"rgba(255,255,255,.95)",backdropFilter:"blur(12px)",borderBottom:"1px solid #F0E0DC"},
+  formCard:{maxWidth:440,width:"100%",margin:"auto",padding:"0 48px 48px"},
+  formTop:{padding:"44px 0 32px",borderBottom:"1px solid #F0E0DC",marginBottom:32},
+  formTitle:{fontSize:30,fontWeight:800,color:"#1a0a07",marginBottom:8,letterSpacing:-.5},
+  formSub:{fontSize:15,color:"#7A4A45"},
+  label:{display:"block",fontSize:13,fontWeight:600,color:"#4A2020",marginBottom:8,letterSpacing:.2},
+  inputIcon:{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",display:"flex",alignItems:"center"},
+  eyeBtn:{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",padding:4,display:"flex",alignItems:"center"},
+  err:{display:"block",fontSize:12,color:"#C0392B",marginTop:6,fontWeight:500},
+  alert:{display:"flex",alignItems:"center",gap:8,background:"#fff2f2",border:"1.5px solid rgba(192,57,43,.25)",borderRadius:10,padding:"12px 16px",fontSize:13,color:"#C0392B",marginBottom:4,fontWeight:500},
+  divider:{borderTop:"1px solid #F0E0DC",margin:"22px 0 18px"},
 };

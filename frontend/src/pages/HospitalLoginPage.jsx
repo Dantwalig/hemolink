@@ -2,236 +2,149 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
 import { useAuth } from "../utils/AuthContext.jsx";
-import { IconEmail, IconLock, IconEye, IconEyeOff, IconAlert, IconShield, IconCheck } from "../utils/Icons.jsx";
+import { useLang } from "../utils/LangContext.jsx";
+import LanguageSwitcher from "../utils/LanguageSwitcher.jsx";
+import { LogoDrop, AuthLayout, inputStyle, LABEL, ERR_MSG, INPUT_ICON } from "../utils/HLComponents.jsx";
 
-const validators = {
-  email(value) {
-    if (!value.trim()) return "Email address is required.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email address.";
-    return "";
-  },
-  password(value) {
-    if (!value) return "Password is required.";
-    return "";
-  },
-};
-
-function Field({ label, required, error, helper, children }) {
-  return (
-    <div style={styles.field}>
-      <label style={styles.label}>{label}{required && <span style={styles.required}> *</span>}</label>
-      {children}
-      {error  && <span style={styles.errorMsg}><IconAlert size={12} /> {error}</span>}
-      {!error && helper && <span style={styles.helperMsg}>{helper}</span>}
-    </div>
-  );
-}
-
-function InputField({ icon: Icon, type = "text", value, onChange, onBlur, error, placeholder, autoComplete }) {
-  const [showPw, setShowPw] = useState(false);
-  const isPassword   = type === "password";
-  const resolvedType = isPassword ? (showPw ? "text" : "password") : type;
-  const borderColor  = error ? "#C0392B" : value ? "#1E8449" : "#DDD5D0";
-  const bg           = error ? "#fff8f8" : "#fff";
-  return (
-    <div style={styles.inputWrap}>
-      {Icon && <span style={styles.inputIcon}><Icon size={15} color="#9B9B9B" /></span>}
-      <input
-        type={resolvedType} value={value} onChange={onChange} onBlur={onBlur}
-        placeholder={placeholder} autoComplete={autoComplete}
-        style={{ ...styles.input, borderColor, background: bg, paddingLeft: Icon ? 38 : 14 }}
-      />
-      {isPassword && (
-        <button type="button" style={styles.togglePw} onClick={() => setShowPw(s => !s)}>
-          {showPw ? <IconEyeOff size={15} color="#9B9B9B" /> : <IconEye size={15} color="#9B9B9B" />}
-        </button>
-      )}
-    </div>
-  );
-}
+const EmailIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <rect x="1" y="3" width="14" height="10" rx="1.5" stroke="#9B7B77" strokeWidth="1.3"/>
+    <path d="M1 5l7 5 7-5" stroke="#9B7B77" strokeWidth="1.3"/>
+  </svg>
+);
+const LockIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <rect x="3" y="7" width="10" height="8" rx="1.5" stroke="#9B7B77" strokeWidth="1.3"/>
+    <path d="M5 7V5a3 3 0 016 0v2" stroke="#9B7B77" strokeWidth="1.3"/>
+    <circle cx="8" cy="11" r="1" fill="#9B7B77"/>
+  </svg>
+);
+const HospitalIcon = () => (
+  <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+    <rect x="6" y="14" width="36" height="30" rx="3" stroke="rgba(255,255,255,.7)" strokeWidth="2"/>
+    <path d="M14 44V30h20v14M18 6h12v8H18zM20 22h8M24 18v8" stroke="rgba(255,255,255,.7)" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
 
 export default function HospitalLoginPage() {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const { login } = useAuth();
-
-  const [form,        setForm]        = useState({ email: "", password: "" });
-  const [errors,      setErrors]      = useState({});
-  const [touched,     setTouched]     = useState({});
-  const [loading,     setLoading]     = useState(false);
+  const { t } = useLang();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [showPw, setShowPw] = useState(false);
 
-  const set = (field, val) => {
-    setForm(f => ({ ...f, [field]: val }));
-    if (touched[field]) setErrors(e => ({ ...e, [field]: validators[field]?.(val) ?? "" }));
+  const validate = {
+    email: (v) => { if (!v.trim()) return "Email is required."; if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "Enter a valid email."; return ""; },
+    password: (v) => v ? "" : "Password is required.",
   };
-  const touch = (field) => {
-    setTouched(t => ({ ...t, [field]: true }));
-    setErrors(e => ({ ...e, [field]: validators[field]?.(form[field]) ?? "" }));
-  };
-  const validateAll = () => {
-    const errs = { email: validators.email(form.email), password: validators.password(form.password) };
-    setErrors(errs);
-    setTouched({ email: true, password: true });
-    return !Object.values(errs).some(Boolean);
-  };
+  const set = (f, v) => { setForm(x => ({ ...x, [f]: v })); if (touched[f]) setErrors(e => ({ ...e, [f]: validate[f]?.(v) || "" })); };
+  const touch = (f) => { setTouched(t => ({ ...t, [f]: true })); setErrors(e => ({ ...e, [f]: validate[f]?.(form[f]) || "" })); };
 
-  const handleLogin = async () => {
-    if (!validateAll()) return;
-    setLoading(true);
-    setServerError("");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errs = { email: validate.email(form.email), password: validate.password(form.password) };
+    setErrors(errs); setTouched({ email: true, password: true });
+    if (Object.values(errs).some(Boolean)) return;
+    setLoading(true); setServerError("");
     try {
       const res = await api.post("/hospitals/login", { email: form.email, password: form.password });
-      const { hospital, token } = res.data.data;
-      login({ ...hospital, role: "hospital" }, token);
+      login(res.data.data.hospital, res.data.data.token);
       navigate("/hospital/dashboard");
     } catch (err) {
-      setServerError(err.response?.data?.message || "Login failed. Check your credentials.");
-    } finally {
-      setLoading(false);
-    }
+      setServerError(err.response?.data?.message || "Login failed. Please try again.");
+    } finally { setLoading(false); }
   };
 
   return (
-    <div style={styles.page}>
-
-      {/* Left — full bleed hospital photo */}
-      <div style={styles.leftPanel}>
-
-        <div style={styles.leftInner}>
-          <button style={styles.backLink} onClick={() => navigate("/")}>
-            &larr; Back to Home
-          </button>
-          <div style={styles.logoRow}>
-            <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
-            <span style={styles.logoTextWhite}>Hemo<span style={styles.logoAccent}>Link</span> Rwanda</span>
+    <AuthLayout
+      panelTitle={t("hospitalLogin.title")}
+      panelSub={t("hospitalLogin.subtitle")}
+      panelStats={[["130K+","Units needed yearly"],["24/7","Emergency ready"],["Live","Blood matching"]]}
+    >
+      {/* Form side */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column" }}>
+        {/* Top bar */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 40px", background:"rgba(255,255,255,.95)", backdropFilter:"blur(12px)", borderBottom:"1px solid #F0E0DC" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <LogoDrop size={30}/>
+            <span style={{ fontWeight:800, fontSize:16, color:"#1a0a07" }}>Hemo<span style={{ color:"#C0392B" }}>Link</span></span>
           </div>
-          <h1 style={styles.leftTitle}>Hospital<br /><em style={styles.leftEm}>Staff Portal</em></h1>
-          <p style={styles.leftDesc}>
-            Access your dashboard to submit emergency blood requests,
-            track donor responses, and manage your blood inventory in real time.
-          </p>
-          <div style={styles.featureList}>
-            {[
-              "Submit urgent blood requests",
-              "Match donors by proximity & blood type",
-              "Monitor inventory levels",
-              "Track donor responses live",
-            ].map(text => (
-              <div key={text} style={styles.featureItem}>
-                <span style={styles.featureIcon}><IconCheck size={12} color="#fff" /></span>
-                <span style={styles.featureText}>{text}</span>
-              </div>
-            ))}
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <LanguageSwitcher />
+            <button className="hl-back" onClick={() => navigate("/")}>{t("login.backHome")}</button>
           </div>
         </div>
-      </div>
 
-      {/* Right — form */}
-      <div style={styles.rightPanel}>
-        <div style={styles.formBox}>
-          <div style={styles.formLogoRow}>
-            <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
-            <span style={styles.logoText}>Hemo<span style={styles.logoRed}>Link</span> Rwanda</span>
-          </div>
+        {/* Hospital indicator strip */}
+        <div style={{ background:"linear-gradient(90deg,rgba(192,57,43,.06),transparent)", padding:"12px 48px", display:"flex", alignItems:"center", gap:10, borderBottom:"1px solid #F8EDEB" }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="5" width="12" height="10" rx="1" stroke="#C0392B" strokeWidth="1.3"/><path d="M5 15v-4h6v4M6 2h4v3H6zM7 8h2M8 7v2" stroke="#C0392B" strokeWidth="1.3" strokeLinecap="round"/></svg>
+          <span style={{ fontSize:12, color:"#C0392B", fontWeight:600, letterSpacing:.3 }}>HOSPITAL PORTAL</span>
+        </div>
 
-          <h2 style={styles.formTitle}>Hospital Login</h2>
-          <p style={styles.formSub}>Sign in with your hospital email to access the dashboard.</p>
-
-          {serverError && (
-            <div style={styles.alertError}>
-              <IconAlert size={14} /> {serverError}
+        <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"32px 48px" }}>
+          <div style={{ maxWidth:420, width:"100%", animation:"fadeInUp .6s ease both" }}>
+            <div style={{ marginBottom:32 }}>
+              <h1 style={{ fontSize:28, fontWeight:800, color:"#1a0a07", marginBottom:8, letterSpacing:-.5 }}>{t("hospitalLogin.title")}</h1>
+              <p style={{ fontSize:15, color:"#7A4A45" }}>{t("hospitalLogin.subtitle")}</p>
             </div>
-          )}
 
-          <Field label="Hospital Email" required error={touched.email && errors.email}>
-            <InputField icon={IconEmail} type="email" value={form.email}
-              placeholder="admin@hospital.rw"
-              onChange={e => set("email", e.target.value)} onBlur={() => touch("email")}
-              error={touched.email && errors.email} autoComplete="email" />
-          </Field>
+            {serverError && (
+              <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:20, fontWeight:500 }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#C0392B" strokeWidth="1.4"/><path d="M8 5v3M8 10.5v.5" stroke="#C0392B" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                {serverError}
+              </div>
+            )}
 
-          <Field label="Password" required error={touched.password && errors.password}>
-            <InputField icon={IconLock} type="password" value={form.password}
-              placeholder="Your password"
-              onChange={e => set("password", e.target.value)} onBlur={() => touch("password")}
-              error={touched.password && errors.password} autoComplete="current-password" />
-          </Field>
+            <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:20 }}>
+              {/* Email */}
+              <div>
+                <label style={LABEL}>{t("hospitalLogin.email")} <span style={{ color:"#C0392B" }}>*</span></label>
+                <div style={{ position:"relative" }}>
+                  <span style={INPUT_ICON}><EmailIcon/></span>
+                  <input type="email" value={form.email} onChange={e=>set("email",e.target.value)} onBlur={()=>touch("email")}
+                    placeholder={t("hospitalLogin.emailPlaceholder")} autoComplete="email"
+                    style={inputStyle(errors.email && touched.email, form.email)}/>
+                </div>
+                {errors.email && touched.email && <span style={ERR_MSG}>{errors.email}</span>}
+              </div>
 
-          <button style={{ ...styles.submitBtn, ...(loading ? styles.submitDisabled : {}) }}
-            onClick={handleLogin} disabled={loading}>
-            {loading ? "Signing in…" : "Access Hospital Dashboard"}
-          </button>
+              {/* Password */}
+              <div>
+                <label style={LABEL}>{t("hospitalLogin.password")} <span style={{ color:"#C0392B" }}>*</span></label>
+                <div style={{ position:"relative" }}>
+                  <span style={INPUT_ICON}><LockIcon/></span>
+                  <input type={showPw ? "text" : "password"} value={form.password} onChange={e=>set("password",e.target.value)} onBlur={()=>touch("password")}
+                    placeholder={t("hospitalLogin.passwordPlaceholder")} autoComplete="current-password"
+                    style={{ ...inputStyle(errors.password && touched.password, form.password), paddingRight:44 }}/>
+                  <button type="button" style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", padding:4, display:"flex", alignItems:"center" }} onClick={()=>setShowPw(p=>!p)} tabIndex={-1}>
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d={showPw ? "M1 9s3-5.5 8-5.5S17 9 17 9s-3 5.5-8 5.5S1 9 1 9z" : "M1 9s3-5.5 8-5.5S17 9 17 9s-3 5.5-8 5.5S1 9 1 9z"} stroke="#9B7B77" strokeWidth="1.4"/><circle cx="9" cy="9" r="2.5" stroke="#9B7B77" strokeWidth="1.4"/>{!showPw && <path d="M2 2l14 14" stroke="#9B7B77" strokeWidth="1.4" strokeLinecap="round"/>}</svg>
+                  </button>
+                </div>
+                {errors.password && touched.password && <span style={ERR_MSG}>{errors.password}</span>}
+              </div>
 
-          <div style={styles.accessNote}>
-            <IconShield size={14} color="#9B6B4B" />
-            <span>
-              Don't have an account?{" "}
-              <button style={styles.inlineBtn} onClick={() => navigate("/hospital/register")}>
-                Register your hospital
+              <button type="submit" className="hl-submit" disabled={loading} style={{ marginTop:4 }}>
+                {loading ? t("hospitalLogin.signingIn") : t("hospitalLogin.submit")}
               </button>
-              {" "}— admin approval required.
-            </span>
-          </div>
+            </form>
 
-          <div style={styles.divider}>
-            <hr style={styles.dividerLine} />
-            <span style={styles.dividerText}>not a hospital?</span>
-            <hr style={styles.dividerLine} />
+            <div style={{ textAlign:"center", marginTop:24, fontSize:13, color:"#7A4A45" }}>
+              {t("hospitalLogin.noAccount")}{" "}
+              <button className="hl-link" onClick={()=>navigate("/hospital/register")}>{t("hospitalLogin.register")}</button>
+            </div>
+            <div style={{ borderTop:"1px solid #F0E0DC", margin:"22px 0 18px" }}/>
+            <div style={{ textAlign:"center", fontSize:13, color:"#7A4A45" }}>
+              <button className="hl-link" style={{ color:"#9B7B77" }} onClick={()=>navigate("/login")}>
+                {t("nav.donorLogin")} →
+              </button>
+            </div>
           </div>
-
-          <p style={styles.switchLink}>
-            <button style={styles.linkBtn} onClick={() => navigate("/login")}>Donor Login</button>
-            &nbsp;&middot;&nbsp;
-            <button style={styles.linkBtn} onClick={() => navigate("/register")}>Register as Donor</button>
-          </p>
         </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
-
-const styles = {
-  page:          { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" },
-  leftPanel:     { width: "45vw", flexShrink: 0, position: "fixed", top: 0, left: 0, height: "100vh", overflow: "hidden", background: "#1C1C1C", display: "flex", alignItems: "center", justifyContent: "center" },
-  overlay:       {},
-  leftInner:     { padding: "28px 40px", width: "100%", maxWidth: 460, display: "flex", flexDirection: "column", justifyContent: "center" },
-  backLink:      { background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 12, cursor: "pointer", marginBottom: 20, display: "block", padding: 0, textAlign: "left" },
-  logoRow:       { display: "flex", alignItems: "center", gap: 10, marginBottom: 16 },
-  logoDrop:      { width: 32, height: 32, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  logoDropText:  { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 12 },
-  logoTextWhite: { fontWeight: 800, fontSize: 17, color: "#fff", letterSpacing: -0.3 },
-  logoAccent:    { color: "#E87B6E" },
-  leftTitle:     { fontSize: 26, fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 10 },
-  leftEm:        { fontStyle: "italic", fontWeight: 400, color: "#E87B6E" },
-  leftDesc:      { fontSize: 12.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, marginBottom: 18 },
-  featureList:   { display: "flex", flexDirection: "column", gap: 8 },
-  featureItem:   { display: "flex", alignItems: "center", gap: 12 },
-  featureIcon:   { width: 24, height: 24, background: "rgba(255,255,255,0.12)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  featureText:   { fontSize: 12, color: "rgba(255,255,255,0.85)" },
-  rightPanel:    { marginLeft: "45vw", flex: 1, background: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "60px 48px", overflowY: "auto" },
-  formBox:       { width: "100%", maxWidth: 420 },
-  formLogoRow:   { display: "flex", alignItems: "center", gap: 10, marginBottom: 28 },
-  logoText:      { fontWeight: 800, fontSize: 17, letterSpacing: -0.3, color: "#1C1C1C" },
-  logoRed:       { color: "#C0392B" },
-  formTitle:     { fontSize: 26, fontWeight: 800, color: "#1C1C1C", marginBottom: 6 },
-  formSub:       { fontSize: 14, color: "#6B6B6B", marginBottom: 28, lineHeight: 1.5 },
-  field:         { display: "flex", flexDirection: "column", gap: 6, marginBottom: 18 },
-  label:         { fontSize: 13, fontWeight: 500, color: "#1C1C1C" },
-  required:      { color: "#C0392B" },
-  errorMsg:      { fontSize: 12, color: "#C0392B", display: "flex", alignItems: "center", gap: 4 },
-  helperMsg:     { fontSize: 12, color: "#6B6B6B" },
-  inputWrap:     { position: "relative", display: "flex", alignItems: "center" },
-  inputIcon:     { position: "absolute", left: 13, pointerEvents: "none", zIndex: 1, display: "flex" },
-  input:         { width: "100%", padding: "11px 14px 11px 38px", border: "1.5px solid #DDD5D0", borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1C1C1C", outline: "none", transition: "border-color 0.2s", boxSizing: "border-box" },
-  togglePw:      { position: "absolute", right: 12, background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" },
-  alertError:    { display: "flex", alignItems: "center", gap: 8, background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A", borderRadius: 9, padding: "12px 16px", fontSize: 13.5, marginBottom: 20 },
-  submitBtn:     { width: "100%", padding: 13, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", marginTop: 4 },
-  submitDisabled:{ background: "#ccc", cursor: "not-allowed" },
-  accessNote:    { display: "flex", alignItems: "flex-start", gap: 8, background: "#F5EDE4", borderRadius: 9, padding: "10px 14px", marginTop: 14, fontSize: 12.5, color: "#6B6B6B", lineHeight: 1.6 },
-  inlineBtn:     { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 12.5, padding: 0 },
-  divider:       { display: "flex", alignItems: "center", gap: 12, margin: "20px 0" },
-  dividerLine:   { flex: 1, border: "none", borderTop: "1px solid #DDD5D0" },
-  dividerText:   { fontSize: 12, color: "#6B6B6B", whiteSpace: "nowrap" },
-  switchLink:    { textAlign: "center", fontSize: 13, color: "#6B6B6B" },
-  linkBtn:       { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 13 },
-};

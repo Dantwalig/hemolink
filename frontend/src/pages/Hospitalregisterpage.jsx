@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
+import LanguageSwitcher from "../utils/LanguageSwitcher.jsx";
 import {
   IconEmail, IconLock, IconEye, IconEyeOff, IconAlert, IconCheck,
-  IconPhone, IconBuilding, IconPin, IconGlobe, IconSuccess,
+  IconPhone, IconBuilding, IconPin, IconSuccess,
 } from "../utils/Icons.jsx";
 
 const PROVINCES = [
@@ -85,16 +86,30 @@ function SelectField({ icon: Icon, value, onChange, onBlur, error, children, dis
 
 export default function HospitalRegisterPage() {
   const navigate = useNavigate();
-  const [done,        setDone]        = useState(false);
-  const [loading,     setLoading]     = useState(false);
-  const [serverError, setServerError] = useState("");
-  const [errors,      setErrors]      = useState({});
-  const [touched,     setTouched]     = useState({});
+  const [done,           setDone]           = useState(false);
+  const [loading,        setLoading]        = useState(false);
+  const [serverError,    setServerError]    = useState("");
+  const [errors,         setErrors]         = useState({});
+  const [touched,        setTouched]        = useState({});
+  const [locationStatus, setLocationStatus] = useState("idle");
   const [form, setForm] = useState({
     name: "", phone: "", email: "", password: "", confirmPassword: "",
     provinceCode: "", districtCode: "", sector: "", cell: "", village: "",
-    latitude: "", longitude: "",
+    latitude: null, longitude: null,
   });
+
+  const getLocation = () => {
+    if (!navigator.geolocation) { setLocationStatus("denied"); return; }
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((f) => ({ ...f, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
+        setLocationStatus("granted");
+        setErrors((e) => ({ ...e, location: "" }));
+      },
+      () => setLocationStatus("denied")
+    );
+  };
 
   const set = (field, val) => {
     setForm(f => {
@@ -122,8 +137,9 @@ export default function HospitalRegisterPage() {
     const fields = ["name","phone","email","password","confirmPassword","provinceCode","districtCode","sector","cell","village"];
     const errs = {};
     fields.forEach(f => { errs[f] = f === "confirmPassword" ? validators.confirmPassword(form[f], form.password) : validators[f]?.(form[f]) ?? ""; });
+    if (locationStatus !== "granted") errs.location = "Please share your GPS location to continue.";
     setErrors(errs);
-    setTouched(Object.fromEntries(fields.map(f => [f, true])));
+    setTouched({ ...Object.fromEntries(fields.map(f => [f, true])), location: true });
     return !Object.values(errs).some(Boolean);
   };
 
@@ -132,9 +148,12 @@ export default function HospitalRegisterPage() {
     setLoading(true);
     setServerError("");
     try {
-      const payload = { name: form.name, phone: form.phone, email: form.email, password: form.password, provinceCode: form.provinceCode, districtCode: form.districtCode, sector: form.sector, cell: form.cell, village: form.village };
-      const lat = parseFloat(form.latitude), lon = parseFloat(form.longitude);
-      if (!isNaN(lat) && !isNaN(lon)) { payload.latitude = lat; payload.longitude = lon; }
+      const payload = {
+        name: form.name, phone: form.phone, email: form.email, password: form.password,
+        provinceCode: form.provinceCode, districtCode: form.districtCode,
+        sector: form.sector, cell: form.cell, village: form.village,
+        latitude: form.latitude, longitude: form.longitude,
+      };
       await api.post("/hospitals/register", payload);
       setDone(true);
     } catch (err) {
@@ -166,7 +185,10 @@ export default function HospitalRegisterPage() {
       <div style={styles.leftPanel}>
 
         <div style={styles.leftInner}>
-          <button style={styles.backLink} onClick={() => navigate("/hospital-login")}>&larr; Back to Login</button>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+            <button style={styles.backLink} onClick={() => navigate("/hospital-login")}>&larr; Back to Login</button>
+            <LanguageSwitcher variant="light"/>
+          </div>
           <div style={styles.logoRow}>
             <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
             <span style={styles.logoTextWhite}>Hemo<span style={styles.logoAccent}>Link</span> Rwanda</span>
@@ -271,18 +293,29 @@ export default function HospitalRegisterPage() {
               error={touched.village && errors.village} />
           </Field>
 
-          <div style={styles.sectionLabel}>
-            GPS Coordinates <span style={styles.optional}>(optional)</span>
-          </div>
-          <div style={styles.fieldRow}>
-            <Field label="Latitude" helper="Between -2.84 and -1.05">
-              <InputField icon={IconGlobe} value={form.latitude} placeholder="-1.9441"
-                onChange={e => set("latitude", e.target.value)} />
-            </Field>
-            <Field label="Longitude" helper="Between 28.86 and 30.90">
-              <InputField icon={IconGlobe} value={form.longitude} placeholder="30.0619"
-                onChange={e => set("longitude", e.target.value)} />
-            </Field>
+          <div style={styles.sectionLabel}>GPS Location <span style={{ color: "#C0392B" }}>*</span></div>
+          <div style={{ ...styles.locationRow, ...(touched.location && errors.location ? { borderLeft: "3px solid #C0392B", background: "#fff8f8" } : {}) }}>
+            <div>
+              <div style={styles.locationLabel}>
+                Share hospital location
+              </div>
+              <div style={styles.locationSub}>
+                {locationStatus === "idle"    && "Required to appear on the donor map."}
+                {locationStatus === "loading" && "Getting location…"}
+                {locationStatus === "granted" && `Location saved (${form.latitude?.toFixed(4)}, ${form.longitude?.toFixed(4)})`}
+                {locationStatus === "denied"  && "Location denied. Please enable browser location access."}
+              </div>
+              {touched.location && errors.location && (
+                <span style={{ fontSize: 12, color: "#C0392B", display: "block", marginTop: 4 }}>{errors.location}</span>
+              )}
+            </div>
+            {locationStatus !== "granted" && (
+              <button type="button"
+                style={{ ...styles.submitBtn, marginTop: 0, padding: "8px 18px", fontSize: 13, width: "auto", flexShrink: 0 }}
+                onClick={getLocation} disabled={locationStatus === "loading"}>
+                {locationStatus === "loading" ? "Locating…" : "Detect Location"}
+              </button>
+            )}
           </div>
 
           <div style={styles.sectionLabel}>Set Password</div>
@@ -315,7 +348,7 @@ export default function HospitalRegisterPage() {
 }
 
 const styles = {
-  page:          { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" },
+  page:          { display: "flex", minHeight: "100vh", fontFamily: "'Sora', sans-serif" },
   leftPanel:     { width: "35vw", flexShrink: 0, position: "fixed", top: 0, left: 0, height: "100vh", overflow: "hidden", background: "#1C1C1C", display: "flex", alignItems: "center", justifyContent: "center" },
   overlay:       {},
   leftInner:     { padding: "24px 28px", width: "100%", display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" },
@@ -342,8 +375,10 @@ const styles = {
   formTitle:     { fontSize: 24, fontWeight: 800, color: "#1C1C1C", marginBottom: 4 },
   formSub:       { fontSize: 14, color: "#6B6B6B", marginBottom: 22, lineHeight: 1.5 },
   sectionLabel:  { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, color: "#9B9B9B", marginBottom: 12, marginTop: 6, paddingBottom: 6, borderBottom: "1px solid #F2EDE8" },
-  optional:      { fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 12 },
   fieldRow:      { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
+  locationRow:   { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", background: "#F0E8DF", borderRadius: 10, marginBottom: 16, gap: 12 },
+  locationLabel: { fontSize: 13, fontWeight: 500, color: "#1C1C1C", marginBottom: 2 },
+  locationSub:   { fontSize: 11, color: "#6B6B6B" },
   field:         { display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 },
   label:         { fontSize: 13, fontWeight: 500, color: "#1C1C1C" },
   required:      { color: "#C0392B" },
@@ -351,14 +386,14 @@ const styles = {
   helperMsg:     { fontSize: 12, color: "#6B6B6B" },
   inputWrap:     { position: "relative", display: "flex", alignItems: "center" },
   inputIcon:     { position: "absolute", left: 11, pointerEvents: "none", zIndex: 1, display: "flex" },
-  input:         { width: "100%", padding: "9px 12px 9px 34px", border: "1.5px solid #DDD5D0", borderRadius: 8, fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: "#1C1C1C", outline: "none", transition: "border-color 0.2s", boxSizing: "border-box" },
+  input:         { width: "100%", padding: "9px 12px 9px 34px", border: "1.5px solid #DDD5D0", borderRadius: 8, fontFamily: "'Sora', sans-serif", fontSize: 13.5, color: "#1C1C1C", outline: "none", transition: "border-color 0.2s", boxSizing: "border-box" },
   togglePw:      { position: "absolute", right: 10, background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" },
   alertError:    { display: "flex", alignItems: "center", gap: 8, background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A", borderRadius: 9, padding: "12px 16px", fontSize: 13.5, marginBottom: 18 },
   submitBtn:     { width: "100%", padding: 13, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", marginTop: 10 },
   submitDisabled:{ background: "#ccc", cursor: "not-allowed" },
   switchLink:    { textAlign: "center", fontSize: 13, color: "#6B6B6B", marginTop: 14 },
   linkBtn:       { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 13 },
-  centeredPage:  { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px", fontFamily: "'DM Sans', sans-serif", background: "#FDF6EE" },
+  centeredPage:  { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px", fontFamily: "'Sora', sans-serif", background: "#FDF4F2" },
   successBox:    { textAlign: "center", padding: "60px 40px", maxWidth: 480, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 },
   successTitle:  { fontSize: 26, fontWeight: 800, color: "#1C1C1C", margin: 0 },
   successDesc:   { fontSize: 15, color: "#6B6B6B", lineHeight: 1.7, margin: 0 },

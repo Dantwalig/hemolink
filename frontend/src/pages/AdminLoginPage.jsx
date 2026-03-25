@@ -2,196 +2,146 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
 import { useAuth } from "../utils/AuthContext.jsx";
-import { IconEmail, IconLock, IconEye, IconEyeOff, IconAlert, IconShield } from "../utils/Icons.jsx";
+import LanguageSwitcher from "../utils/LanguageSwitcher.jsx";
+import { LogoDrop, LABEL, ERR_MSG, INPUT_ICON, SORA_FONT, SHARED_BTN_CSS } from "../utils/HLComponents.jsx";
 
-const validators = {
-  email(v) {
-    if (!v.trim()) return "Email is required.";
-    if (!v.endsWith("@rbc.gov.rw")) return "Admin accounts must use an @rbc.gov.rw email.";
-    return "";
-  },
-  password(v) { return v ? "" : "Password is required."; },
-};
-
-function Field({ label, required, error, children }) {
-  return (
-    <div style={styles.field}>
-      <label style={styles.label}>{label}{required && <span style={styles.req}> *</span>}</label>
-      {children}
-      {error && <span style={styles.errorMsg}><IconAlert size={12} /> {error}</span>}
-    </div>
-  );
-}
-
-function InputField({ icon: Icon, type = "text", value, onChange, onBlur, error, placeholder, autoComplete }) {
-  const [showPw, setShowPw] = useState(false);
-  const isPassword   = type === "password";
-  const resolvedType = isPassword ? (showPw ? "text" : "password") : type;
-  const borderColor  = error ? "#C0392B" : value ? "#1E8449" : "#DDD5D0";
-  return (
-    <div style={styles.inputWrap}>
-      {Icon && <span style={styles.inputIcon}><Icon size={14} color="#9B9B9B" /></span>}
-      <input type={resolvedType} value={value} onChange={onChange} onBlur={onBlur}
-        placeholder={placeholder} autoComplete={autoComplete}
-        style={{ ...styles.input, borderColor, paddingLeft: Icon ? 38 : 14 }} />
-      {isPassword && (
-        <button type="button" style={styles.togglePw} onClick={() => setShowPw(s => !s)}>
-          {showPw ? <IconEyeOff size={14} color="#9B9B9B" /> : <IconEye size={14} color="#9B9B9B" />}
-        </button>
-      )}
-    </div>
-  );
-}
+const ShieldIcon = () => (
+  <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+    <path d="M30 5L8 15v16c0 13.255 9.425 25.646 22 29 12.575-3.354 22-15.745 22-29V15L30 5z" stroke="rgba(255,255,255,.55)" strokeWidth="2" strokeLinejoin="round"/>
+    <path d="M20 30l7 7 13-14" stroke="rgba(255,255,255,.55)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
 
 export default function AdminLoginPage() {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const { login } = useAuth();
-
-  const [form,        setForm]        = useState({ email: "", password: "" });
-  const [errors,      setErrors]      = useState({});
-  const [touched,     setTouched]     = useState({});
-  const [loading,     setLoading]     = useState(false);
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [showPw, setShowPw] = useState(false);
 
-  const set = (f, v) => {
-    setForm(prev => ({ ...prev, [f]: v }));
-    if (touched[f]) setErrors(e => ({ ...e, [f]: validators[f]?.(v) ?? "" }));
+  const validate = {
+    email: (v) => { if (!v.trim()) return "Email is required."; if (!v.endsWith("@rbc.gov.rw")) return "Must be an @rbc.gov.rw email address."; return ""; },
+    password: (v) => v ? "" : "Password is required.",
   };
-  const touch = (f) => {
-    setTouched(t => ({ ...t, [f]: true }));
-    setErrors(e => ({ ...e, [f]: validators[f]?.(form[f]) ?? "" }));
-  };
-  const validateAll = () => {
-    const errs = { email: validators.email(form.email), password: validators.password(form.password) };
+  const set = (f, v) => { setForm(x => ({ ...x, [f]: v })); if (touched[f]) setErrors(e => ({ ...e, [f]: validate[f]?.(v) || "" })); };
+  const touch = (f) => { setTouched(t => ({ ...t, [f]: true })); setErrors(e => ({ ...e, [f]: validate[f]?.(form[f]) || "" })); };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errs = { email: validate.email(form.email), password: validate.password(form.password) };
     setErrors(errs); setTouched({ email: true, password: true });
-    return !Object.values(errs).some(Boolean);
-  };
-
-  const handleLogin = async () => {
-    if (!validateAll()) return;
+    if (Object.values(errs).some(Boolean)) return;
     setLoading(true); setServerError("");
     try {
       const res = await api.post("/admin/login", { email: form.email, password: form.password });
-      const { admin, token } = res.data.data;
-      login({ ...admin, role: "admin" }, token);
+      login(res.data.data.admin, res.data.data.token);
       navigate("/admin/dashboard");
     } catch (err) {
       setServerError(err.response?.data?.message || "Login failed.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  return (
-    <div style={styles.page}>
-      {/* Left panel */}
-      <div style={styles.leftPanel}>
+  const inp = (f) => ({
+    width:"100%", padding:"13px 14px 13px 40px",
+    border:`1.5px solid ${errors[f]&&touched[f] ? "#C0392B" : form[f] ? "#1E8449" : "#E8D5D0"}`,
+    borderRadius:10, fontSize:14, fontFamily:"'Sora',sans-serif",
+    background: errors[f]&&touched[f] ? "#fff8f8" : "#fff",
+    color:"#1a0a07", transition:"border-color .18s",
+  });
 
-        <div style={styles.leftInner}>
-          <button style={styles.backLink} onClick={() => navigate("/")}>
-            &larr; Back to Home
-          </button>
-          <div style={styles.logoRow}>
-            <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
-            <span style={styles.logoTextWhite}>Hemo<span style={styles.logoAccent}>Link</span> Rwanda</span>
+  return (
+    <div style={{ display:"flex", minHeight:"100vh", fontFamily:"'Sora',sans-serif" }}>
+      <style>{SORA_FONT + SHARED_BTN_CSS}</style>
+
+      {/* Dark left panel */}
+      <div style={{ width:340, background:"linear-gradient(160deg,#1a0505 0%,#0a0000 100%)", position:"relative", overflow:"hidden", flexShrink:0, display:"flex", flexDirection:"column" }}>
+        <div style={{ position:"absolute", inset:0, background:"url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Ccircle fill='%23ffffff' fill-opacity='0.02' cx='20' cy='20' r='1'/%3E%3C/g%3E%3C/svg%3E\")", pointerEvents:"none" }}/>
+        <div style={{ position:"relative", zIndex:1, padding:"48px 36px", display:"flex", flexDirection:"column", justifyContent:"center", height:"100%", gap:28 }}>
+          <div>
+            <div style={{ marginBottom:24 }}><ShieldIcon/></div>
+            <div style={{ fontSize:10, color:"#E87B6E", textTransform:"uppercase", letterSpacing:2, fontWeight:700, marginBottom:10 }}>Rwanda Biomedical Centre</div>
+            <h2 style={{ fontSize:24, fontWeight:800, color:"#fff", marginBottom:10, lineHeight:1.2 }}>RBC Staff Access</h2>
+            <p style={{ fontSize:14, color:"rgba(255,255,255,.5)", lineHeight:1.75 }}>Restricted to @rbc.gov.rw email accounts. Unauthorized access is logged and prosecuted.</p>
           </div>
-          <h1 style={styles.leftTitle}>RBC Admin<br /><em style={styles.leftEm}>Control Panel</em></h1>
-          <p style={styles.leftDesc}>
-            Restricted access for Rwanda Biomedical Centre staff only.
-            Manage hospital approvals, monitor donor activity, and oversee platform operations.
-          </p>
-          <div style={styles.restrictedBadge}>
-            <IconShield size={14} color="#E87B6E" />
-            <span>Restricted to @rbc.gov.rw accounts only</span>
+          <div style={{ padding:"16px 18px", background:"rgba(192,57,43,.15)", borderRadius:12, border:"1px solid rgba(192,57,43,.3)" }}>
+            <div style={{ fontSize:11, color:"#E87B6E", fontWeight:700, textTransform:"uppercase", letterSpacing:.8, marginBottom:6 }}>Access Level</div>
+            <div style={{ fontSize:13, color:"rgba(255,255,255,.65)", lineHeight:1.6 }}>Platform-wide administration: donors, hospitals, blood requests, SMS logs.</div>
           </div>
         </div>
       </div>
 
-      {/* Right panel */}
-      <div style={styles.rightPanel}>
-        <div style={styles.formBox}>
-          <div style={styles.formLogoRow}>
-            <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
-            <span style={styles.logoText}>Hemo<span style={styles.logoRed}>Link</span> Rwanda</span>
+      {/* Form side */}
+      <div style={{ flex:1, background:"#FDF4F2", display:"flex", flexDirection:"column" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 40px", background:"rgba(255,255,255,.95)", borderBottom:"1px solid #F0E0DC" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <LogoDrop size={30}/>
+            <span style={{ fontWeight:800, fontSize:16, color:"#1a0a07" }}>Hemo<span style={{ color:"#C0392B" }}>Link</span></span>
           </div>
-          <h2 style={styles.formTitle}>Admin Login</h2>
-          <p style={styles.formSub}>Sign in with your RBC staff credentials.</p>
-
-          {serverError && (
-            <div style={styles.alertError}><IconAlert size={14} /> {serverError}</div>
-          )}
-
-          <Field label="RBC Email" required error={touched.email && errors.email}>
-            <InputField icon={IconEmail} type="email" value={form.email}
-              placeholder="yourname@rbc.gov.rw"
-              onChange={e => set("email", e.target.value)} onBlur={() => touch("email")}
-              error={touched.email && errors.email} autoComplete="email" />
-          </Field>
-
-          <Field label="Password" required error={touched.password && errors.password}>
-            <InputField icon={IconLock} type="password" value={form.password}
-              placeholder="Your password"
-              onChange={e => set("password", e.target.value)} onBlur={() => touch("password")}
-              error={touched.password && errors.password} autoComplete="current-password" />
-          </Field>
-
-          <button style={{ ...styles.submitBtn, ...(loading ? styles.submitDisabled : {}) }}
-            onClick={handleLogin} disabled={loading}>
-            {loading ? "Signing in…" : "Access Admin Panel"}
-          </button>
-
-          <div style={styles.divider}>
-            <hr style={styles.dividerLine} />
-            <span style={styles.dividerText}>not RBC staff?</span>
-            <hr style={styles.dividerLine} />
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <LanguageSwitcher/>
+            <button className="hl-back" onClick={()=>navigate("/")}>← Back</button>
           </div>
-          <p style={styles.switchLink}>
-            <button style={styles.linkBtn} onClick={() => navigate("/hospital-login")}>Hospital Login</button>
-            &nbsp;&middot;&nbsp;
-            <button style={styles.linkBtn} onClick={() => navigate("/login")}>Donor Login</button>
-          </p>
+        </div>
+
+        <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 48px" }}>
+          <div style={{ maxWidth:420, width:"100%", animation:"fadeInUp .6s ease both" }}>
+            <div style={{ marginBottom:32 }}>
+              <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(192,57,43,.08)", border:"1px solid rgba(192,57,43,.2)", borderRadius:20, padding:"6px 14px", marginBottom:16, fontSize:11, fontWeight:700, color:"#C0392B", letterSpacing:.5, textTransform:"uppercase" }}>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1L2 4v5c0 4.418 2.686 8.548 6 10 3.314-1.452 6-5.582 6-10V4L8 1z" stroke="#C0392B" strokeWidth="1.5"/></svg>
+                Secure Login
+              </div>
+              <h1 style={{ fontSize:28, fontWeight:800, color:"#1a0a07", marginBottom:8, letterSpacing:-.5 }}>RBC Staff Login</h1>
+              <p style={{ fontSize:15, color:"#7A4A45" }}>Admin portal for Rwanda Biomedical Centre staff.</p>
+            </div>
+
+            {serverError && (
+              <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:20, fontWeight:500 }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#C0392B" strokeWidth="1.4"/><path d="M8 5v3M8 10.5v.5" stroke="#C0392B" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                {serverError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:20 }}>
+              <div>
+                <label style={LABEL}>RBC Email Address <span style={{ color:"#C0392B" }}>*</span></label>
+                <div style={{ position:"relative" }}>
+                  <span style={INPUT_ICON}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="#9B7B77" strokeWidth="1.3"/><path d="M1 5l7 5 7-5" stroke="#9B7B77" strokeWidth="1.3"/></svg></span>
+                  <input type="email" value={form.email} onChange={e=>set("email",e.target.value)} onBlur={()=>touch("email")}
+                    placeholder="staff@rbc.gov.rw" autoComplete="email" style={inp("email")}/>
+                </div>
+                {errors.email && touched.email && <span style={ERR_MSG}>{errors.email}</span>}
+                <span style={{ display:"block", fontSize:12, color:"#9B7B77", marginTop:6 }}>Only @rbc.gov.rw accounts are permitted.</span>
+              </div>
+
+              <div>
+                <label style={LABEL}>Password <span style={{ color:"#C0392B" }}>*</span></label>
+                <div style={{ position:"relative" }}>
+                  <span style={INPUT_ICON}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="8" rx="1.5" stroke="#9B7B77" strokeWidth="1.3"/><path d="M5 7V5a3 3 0 016 0v2" stroke="#9B7B77" strokeWidth="1.3"/><circle cx="8" cy="11" r="1" fill="#9B7B77"/></svg></span>
+                  <input type={showPw ? "text" : "password"} value={form.password} onChange={e=>set("password",e.target.value)} onBlur={()=>touch("password")}
+                    placeholder="Your password" autoComplete="current-password"
+                    style={{ ...inp("password"), paddingRight:44 }}/>
+                  <button type="button" style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", padding:4, display:"flex", alignItems:"center" }} onClick={()=>setShowPw(p=>!p)} tabIndex={-1}>
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M1 9s3-5.5 8-5.5S17 9 17 9s-3 5.5-8 5.5S1 9 1 9z" stroke="#9B7B77" strokeWidth="1.4"/><circle cx="9" cy="9" r="2.5" stroke="#9B7B77" strokeWidth="1.4"/>{!showPw && <path d="M2 2l14 14" stroke="#9B7B77" strokeWidth="1.4" strokeLinecap="round"/>}</svg>
+                  </button>
+                </div>
+                {errors.password && touched.password && <span style={ERR_MSG}>{errors.password}</span>}
+              </div>
+
+              <button type="submit" className="hl-submit" disabled={loading} style={{ marginTop:4 }}>
+                {loading ? "Authenticating…" : "Sign In to Admin Portal"}
+              </button>
+            </form>
+
+            <div style={{ borderTop:"1px solid #F0E0DC", margin:"22px 0 18px" }}/>
+            <div style={{ textAlign:"center", fontSize:12, color:"#9B7B77", lineHeight:1.6 }}>
+              This is a restricted system. All access attempts are logged. Contact your RBC system administrator if you need credentials.
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  page:          { display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" },
-  leftPanel:     { width: "45vw", flexShrink: 0, position: "fixed", top: 0, left: 0, height: "100vh", overflow: "hidden", background: "#1C1C1C", display: "flex", alignItems: "center", justifyContent: "center" },
-  overlay:       {},
-  leftInner:     { padding: "28px 40px", width: "100%", maxWidth: 460, display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" },
-  backLink:      { background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer", marginBottom: 18, padding: 0, textAlign: "left" },
-  logoRow:       { display: "flex", alignItems: "center", gap: 10, marginBottom: 28 },
-  logoDrop:      { width: 32, height: 32, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  logoDropText:  { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 12 },
-  logoTextWhite: { fontWeight: 800, fontSize: 17, color: "#fff", letterSpacing: -0.3 },
-  logoAccent:    { color: "#E87B6E" },
-  leftTitle:     { fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 10 },
-  leftEm:        { fontStyle: "italic", fontWeight: 400, color: "#E87B6E" },
-  leftDesc:      { fontSize: 12.5, color: "rgba(255,255,255,0.65)", lineHeight: 1.6, marginBottom: 16 },
-  restrictedBadge: { display: "flex", alignItems: "center", gap: 8, background: "rgba(232,123,110,0.12)", border: "1px solid rgba(232,123,110,0.3)", borderRadius: 8, padding: "6px 10px", fontSize: 11.5, color: "rgba(255,255,255,0.7)" },
-  rightPanel:    { marginLeft: "45vw", flex: 1, background: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "60px 48px", overflowY: "auto" },
-  formBox:       { width: "100%", maxWidth: 400 },
-  formLogoRow:   { display: "flex", alignItems: "center", gap: 10, marginBottom: 28 },
-  logoText:      { fontWeight: 800, fontSize: 17, letterSpacing: -0.3, color: "#1C1C1C" },
-  logoRed:       { color: "#C0392B" },
-  formTitle:     { fontSize: 26, fontWeight: 800, color: "#1C1C1C", marginBottom: 6 },
-  formSub:       { fontSize: 14, color: "#6B6B6B", marginBottom: 28, lineHeight: 1.5 },
-  field:         { display: "flex", flexDirection: "column", gap: 6, marginBottom: 18 },
-  label:         { fontSize: 13, fontWeight: 500, color: "#1C1C1C" },
-  req:           { color: "#C0392B" },
-  errorMsg:      { fontSize: 12, color: "#C0392B", display: "flex", alignItems: "center", gap: 4 },
-  inputWrap:     { position: "relative", display: "flex", alignItems: "center" },
-  inputIcon:     { position: "absolute", left: 13, pointerEvents: "none", zIndex: 1, display: "flex" },
-  input:         { width: "100%", padding: "11px 14px 11px 38px", border: "1.5px solid #DDD5D0", borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1C1C1C", outline: "none", transition: "border-color 0.2s", boxSizing: "border-box" },
-  togglePw:      { position: "absolute", right: 12, background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" },
-  alertError:    { display: "flex", alignItems: "center", gap: 8, background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A", borderRadius: 9, padding: "12px 16px", fontSize: 13.5, marginBottom: 20 },
-  submitBtn:     { width: "100%", padding: 13, background: "#1C1C1C", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", marginTop: 4 },
-  submitDisabled:{ background: "#ccc", cursor: "not-allowed" },
-  divider:       { display: "flex", alignItems: "center", gap: 12, margin: "20px 0" },
-  dividerLine:   { flex: 1, border: "none", borderTop: "1px solid #DDD5D0" },
-  dividerText:   { fontSize: 12, color: "#6B6B6B", whiteSpace: "nowrap" },
-  switchLink:    { textAlign: "center", fontSize: 13, color: "#6B6B6B" },
-  linkBtn:       { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 13 },
-};

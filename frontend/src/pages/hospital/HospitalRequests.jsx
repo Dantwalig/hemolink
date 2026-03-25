@@ -1,31 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../utils/AuthContext.jsx";
 import api from "../../utils/api.js";
-import { IconDashboard, IconBlood, IconBox, IconLogout, IconPlus, IconCheckCircle } from "../../utils/Icons.jsx";
+import HospitalShell from "./HospitalShell.jsx";
 
-const NAV = [
-  { label: "Dashboard", path: "/hospital/dashboard", Icon: IconDashboard },
-  { label: "Requests",  path: "/hospital/requests",  Icon: IconBlood },
-  { label: "Inventory", path: "/hospital/inventory", Icon: IconBox },
-];
-
-const VALID_STATUSES = ["pending", "fulfilled", "cancelled"];
-
-function StatusBadge({ status }) {
-  const map = { pending: ["#FEF9E7","#E67E22"], fulfilled: ["#EAFAF1","#1E8449"], cancelled: ["#FDEDEC","#C0392B"] };
-  const [bg, color] = map[status] || ["#F2F3F4","#555"];
-  return <span style={{ background: bg, color, padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{status}</span>;
-}
+const BLOOD_COLORS = { "O+":"#C0392B","O-":"#922B21","A+":"#E67E22","A-":"#B7560F","B+":"#2E86C1","B-":"#1A5276","AB+":"#8E44AD","AB-":"#6C3483" };
+const URGENCY_COLOR = { critical:"#C0392B", high:"#E67E22", medium:"#D4A017", low:"#1E8449" };
+const STATUS_S = { pending:{bg:"rgba(230,126,34,.1)",c:"#B7560F"}, fulfilled:{bg:"rgba(30,132,73,.1)",c:"#1E8449"}, cancelled:{bg:"rgba(192,57,43,.1)",c:"#C0392B"} };
 
 export default function HospitalRequests() {
-  const navigate         = useNavigate();
-  const { user, logout } = useAuth();
-  const [requests,  setRequests]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [updating,  setUpdating]  = useState(null);
-  const [filter,    setFilter]    = useState("all");
-  const [error,     setError]     = useState("");
+  const navigate = useNavigate();
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(null);
+  const [filter, setFilter] = useState("all");
+  const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState(null);
 
   useEffect(() => {
     api.get("/requests")
@@ -38,148 +27,124 @@ export default function HospitalRequests() {
     setUpdating(requestId);
     try {
       const res = await api.patch(`/requests/${requestId}/status`, { status: newStatus });
-      setRequests(prev => prev.map(r => r.requestId === requestId ? res.data.data : r));
+      setRequests(prev => prev.map(r => r.requestId===requestId ? res.data.data : r));
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update status.");
-    } finally {
-      setUpdating(null);
-    }
+    } finally { setUpdating(null); }
   };
 
-  const filtered = filter === "all" ? requests : requests.filter(r => r.statusCode === filter);
-  const handleLogout = () => { logout(); navigate("/hospital-login"); };
+  const filtered = filter==="all" ? requests : requests.filter(r=>r.statusCode===filter);
+
+  const newBtn = (
+    <button className="hl-btn-red" onClick={()=>navigate("/hospital/requests/new")} style={{ display:"flex", alignItems:"center", gap:8 }}>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
+      New Request
+    </button>
+  );
 
   return (
-    <div style={styles.shell}>
-      <aside style={styles.sidebar}>
-        <div style={styles.sidebarLogo}>
-          <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
-          <span style={styles.logoText}>Hemo<span style={styles.logoRed}>Link</span></span>
-        </div>
-        <div style={styles.sidebarHospital}>{user?.name || "Hospital"}</div>
-        <nav style={styles.nav}>
-          {NAV.map(({ label, path, Icon }) => (
-            <button key={path}
-              style={{ ...styles.navItem, ...(window.location.pathname === path ? styles.navItemActive : {}) }}
-              onClick={() => navigate(path)}>
-              <Icon size={16} color={window.location.pathname === path ? "#fff" : "rgba(255,255,255,0.6)"} />
-              <span>{label}</span>
+    <HospitalShell title="Blood Requests" subtitle={`${requests.length} total requests.`} action={newBtn}>
+      {error && <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:20, fontWeight:500 }}>{error}</div>}
+
+      {/* Filter tabs */}
+      <div style={{ display:"flex", gap:10, marginBottom:20, flexWrap:"wrap" }}>
+        {[["all","All"],["pending","Pending"],["fulfilled","Fulfilled"],["cancelled","Cancelled"]].map(([f,l])=>{
+          const count = f==="all" ? requests.length : requests.filter(r=>r.statusCode===f).length;
+          return (
+            <button key={f} onClick={()=>setFilter(f)}
+              style={{ padding:"8px 16px", borderRadius:9, border:`1.5px solid ${filter===f?"#C0392B":"#E8D5D0"}`, background:filter===f?"rgba(192,57,43,.08)":"#fff", color:filter===f?"#C0392B":"#7A4A45", fontFamily:"'Sora',sans-serif", fontSize:13, fontWeight:filter===f?700:500, cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+              {l}
+              <span style={{ background:filter===f?"rgba(192,57,43,.15)":"#F0E0DC", color:filter===f?"#C0392B":"#9B7B77", fontSize:11, fontWeight:700, padding:"1px 7px", borderRadius:20 }}>{count}</span>
             </button>
-          ))}
-        </nav>
-        <button style={styles.logoutBtn} onClick={handleLogout}>
-          <IconLogout size={14} color="rgba(255,255,255,0.4)" /><span>Log Out</span>
-        </button>
-      </aside>
+          );
+        })}
+      </div>
 
-      <main style={styles.main}>
-        <div style={styles.topBar}>
-          <div>
-            <h1 style={styles.pageTitle}>Blood Requests</h1>
-            <p style={styles.pageSub}>Manage your hospital's blood requests.</p>
-          </div>
-          <button style={styles.newBtn} onClick={() => navigate("/hospital/requests/new")}>
-            <IconPlus size={14} color="#fff" /> New Request
-          </button>
+      {loading ? (
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:240, gap:16 }}>
+          <div style={{ width:32, height:32, border:"3px solid #F0E0DC", borderTopColor:"#C0392B", borderRadius:"50%", animation:"hl-spin .75s linear infinite" }}/>
+          <span style={{ color:"#7A4A45" }}>Loading requests…</span>
         </div>
-
-        {error && <div style={styles.alertError}>{error}</div>}
-
-        <div style={styles.tabs}>
-          {["all", ...VALID_STATUSES].map(s => (
-            <button key={s}
-              style={{ ...styles.tab, ...(filter === s ? styles.tabActive : {}) }}
-              onClick={() => setFilter(s)}>
-              {s.charAt(0).toUpperCase() + s.slice(1)}
-              <span style={styles.tabCount}>
-                {s === "all" ? requests.length : requests.filter(r => r.statusCode === s).length}
-              </span>
-            </button>
-          ))}
+      ) : filtered.length===0 ? (
+        <div style={{ textAlign:"center", padding:"80px 20px", color:"#9B7B77", fontSize:14 }}>
+          {filter==="all" ? "No blood requests yet. Create your first request." : `No ${filter} requests.`}
         </div>
+      ) : (
+        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          {filtered.map(r => {
+            const bc = BLOOD_COLORS[r.bloodTypeCode]||"#C0392B";
+            const ss = STATUS_S[r.statusCode]||{ bg:"rgba(107,107,107,.1)", c:"#6B6B6B" };
+            const uc = URGENCY_COLOR[r.urgencyLevel?.toLowerCase()]||"#C0392B";
+            const isOpen = expanded===r.requestId;
+            const notifs = r.notifications||[];
+            const accepted = notifs.filter(n=>n.responseStatus==="Accepted").length;
 
-        {loading ? (
-          <div style={styles.loadingWrap}><div style={styles.spinner} /><p>Loading…</p></div>
-        ) : filtered.length === 0 ? (
-          <div style={styles.empty}>
-            No {filter !== "all" ? filter : ""} requests found.{" "}
-            {filter === "all" && <button style={styles.linkBtn} onClick={() => navigate("/hospital/requests/new")}>Create one</button>}
-          </div>
-        ) : (
-          <div style={styles.cardList}>
-            {filtered.map(r => (
-              <div key={r.requestId} style={styles.requestCard}>
-                <div style={styles.cardLeft}>
-                  <div style={styles.bloodType}>{r.bloodTypeCode}</div>
-                  <div style={styles.units}>{r.unitsNeeded} unit{r.unitsNeeded !== 1 ? "s" : ""}</div>
-                </div>
-                <div style={styles.cardMid}>
-                  <div style={styles.cardRow}><span style={styles.cardLabel}>Urgency:</span> <strong>{r.urgencyLevel}</strong></div>
-                  <div style={styles.cardRow}><span style={styles.cardLabel}>Needed by:</span> {new Date(r.neededBy).toLocaleString("en-RW", { dateStyle: "medium", timeStyle: "short" })}</div>
-                  <div style={styles.cardRow}><span style={styles.cardLabel}>Notifications sent:</span> {r.notifications?.length ?? 0}</div>
-                </div>
-                <div style={styles.cardRight}>
-                  <StatusBadge status={r.statusCode} />
-                  {r.statusCode === "pending" && (
-                    <div style={styles.actionBtns}>
-                      <button style={styles.fulfillBtn} disabled={updating === r.requestId}
-                        onClick={() => handleStatusChange(r.requestId, "fulfilled")}>
-                        <IconCheckCircle size={13} color="#fff" />
-                        {updating === r.requestId ? "…" : "Mark Fulfilled"}
+            return (
+              <div key={r.requestId} style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:18, overflow:"hidden", boxShadow:"0 4px 12px rgba(140,20,20,.04)" }}>
+                {/* Main row */}
+                <div style={{ display:"flex", alignItems:"center", gap:16, padding:"18px 22px", cursor:"pointer" }} onClick={()=>setExpanded(isOpen?null:r.requestId)}>
+                  {/* Blood type */}
+                  <div style={{ width:56, height:56, borderRadius:14, background:`${bc}12`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <span style={{ fontSize:22, fontWeight:900, color:bc, fontFamily:"'Lora',serif" }}>{r.bloodTypeCode}</span>
+                  </div>
+
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4, flexWrap:"wrap" }}>
+                      <span style={{ fontSize:15, fontWeight:700, color:"#1a0a07" }}>{r.unitsNeeded} unit{r.unitsNeeded>1?"s":""} needed</span>
+                      <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20, background:`${uc}14`, color:uc, textTransform:"capitalize" }}>{r.urgencyLevel}</span>
+                      <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20, background:ss.bg, color:ss.c, textTransform:"capitalize" }}>{r.statusCode}</span>
+                    </div>
+                    <div style={{ fontSize:12, color:"#9B7B77", display:"flex", gap:14 }}>
+                      <span>Needed by: {r.neededBy ? new Date(r.neededBy).toLocaleString("en-RW",{dateStyle:"medium",timeStyle:"short"}) : "—"}</span>
+                      <span>{notifs.length} notified · {accepted} accepted</span>
+                    </div>
+                  </div>
+
+                  {/* Status actions */}
+                  {r.statusCode==="pending" && (
+                    <div style={{ display:"flex", gap:8 }} onClick={e=>e.stopPropagation()}>
+                      <button disabled={updating===r.requestId} onClick={()=>handleStatusChange(r.requestId,"fulfilled")}
+                        style={{ padding:"7px 14px", background:"linear-gradient(135deg,#1E8449,#145A32)", color:"#fff", border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"'Sora',sans-serif", opacity:updating===r.requestId?.65:1 }}>
+                        Fulfilled
                       </button>
-                      <button style={styles.cancelBtn} disabled={updating === r.requestId}
-                        onClick={() => handleStatusChange(r.requestId, "cancelled")}>
+                      <button disabled={updating===r.requestId} onClick={()=>handleStatusChange(r.requestId,"cancelled")}
+                        style={{ padding:"7px 14px", background:"transparent", color:"#C0392B", border:"1.5px solid #C0392B", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"'Sora',sans-serif", opacity:updating===r.requestId?.65:1 }}>
                         Cancel
                       </button>
                     </div>
                   )}
+
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ transform:isOpen?"rotate(180deg)":"none", transition:"transform .2s", flexShrink:0 }}><path d="M3 5l4 4 4-4" stroke="#9B7B77" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
+
+                {/* Expanded donor responses */}
+                {isOpen && (
+                  <div style={{ borderTop:"1px solid #F8EDEB", padding:"16px 22px", background:"rgba(253,244,242,.4)" }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#7A4A45", textTransform:"uppercase", letterSpacing:.8, marginBottom:12 }}>Donor Responses ({notifs.length})</div>
+                    {notifs.length===0 ? (
+                      <p style={{ fontSize:13, color:"#9B7B77" }}>No donors notified yet.</p>
+                    ) : (
+                      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                        {notifs.map(n=>{
+                          const rs = { Accepted:{ bg:"rgba(30,132,73,.1)", c:"#1E8449" }, Declined:{ bg:"rgba(192,57,43,.1)", c:"#C0392B" }, pending:{ bg:"rgba(230,126,34,.1)", c:"#B7560F" } }[n.responseStatus]||{};
+                          return (
+                            <div key={n.notificationId} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", background:"#fff", borderRadius:10, border:"1px solid #F0E0DC" }}>
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="#9B7B77" strokeWidth="1.3"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#9B7B77" strokeWidth="1.3" strokeLinecap="round"/></svg>
+                              <span style={{ flex:1, fontSize:13, color:"#1a0a07", fontWeight:500 }}>{n.donor?.fullName||"Donor"}</span>
+                              <span style={{ fontSize:11, color:"#9B7B77" }}>{n.donor?.phone}</span>
+                              <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20, background:rs.bg, color:rs.c }}>{n.responseStatus}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+            );
+          })}
+        </div>
+      )}
+    </HospitalShell>
   );
 }
-
-const styles = {
-  shell:          { display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif", background: "#F7F3EF" },
-  sidebar:        { width: 220, background: "#1C1C1C", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" },
-  sidebarLogo:    { display: "flex", alignItems: "center", gap: 8, padding: "0 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)" },
-  logoDrop:       { width: 28, height: 28, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center" },
-  logoDropText:   { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 11 },
-  logoText:       { fontWeight: 800, fontSize: 16, color: "#fff" },
-  logoRed:        { color: "#C0392B" },
-  sidebarHospital:{ fontSize: 11, color: "rgba(255,255,255,0.4)", padding: "12px 20px 4px", textTransform: "uppercase", letterSpacing: 0.5 },
-  nav:            { flex: 1, display: "flex", flexDirection: "column", padding: "8px 12px", gap: 2 },
-  navItem:        { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 14, cursor: "pointer", borderRadius: 8, textAlign: "left" },
-  navItemActive:  { background: "rgba(192,57,43,0.25)", color: "#fff", fontWeight: 600 },
-  logoutBtn:      { display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", padding: "16px 20px" },
-  main:           { flex: 1, padding: "32px 40px", overflowY: "auto", height: "100vh" },
-  topBar:         { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 },
-  pageTitle:      { fontSize: 24, fontWeight: 800, color: "#1C1C1C", marginBottom: 4 },
-  pageSub:        { fontSize: 14, color: "#6B6B6B" },
-  newBtn:         { display: "flex", alignItems: "center", gap: 6, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" },
-  alertError:     { background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A", borderRadius: 9, padding: "12px 16px", marginBottom: 16, fontSize: 13 },
-  tabs:           { display: "flex", gap: 8, marginBottom: 18 },
-  tab:            { padding: "7px 14px", background: "#fff", border: "1px solid #DDD5D0", borderRadius: 20, fontSize: 13, cursor: "pointer", color: "#6B6B6B", display: "flex", alignItems: "center", gap: 6 },
-  tabActive:      { background: "#C0392B", color: "#fff", borderColor: "#C0392B" },
-  tabCount:       { background: "rgba(0,0,0,0.1)", borderRadius: 10, padding: "1px 6px", fontSize: 11 },
-  loadingWrap:    { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 300, gap: 16, color: "#6B6B6B" },
-  spinner:        { width: 32, height: 32, border: "3px solid #DDD5D0", borderTopColor: "#C0392B", borderRadius: "50%" },
-  empty:          { fontSize: 14, color: "#6B6B6B", textAlign: "center", padding: "48px 0", background: "#fff", borderRadius: 14, border: "1px solid #DDD5D0" },
-  linkBtn:        { background: "none", border: "none", color: "#C0392B", fontWeight: 600, cursor: "pointer", fontSize: 14 },
-  cardList:       { display: "flex", flexDirection: "column", gap: 10 },
-  requestCard:    { background: "#fff", border: "1px solid #DDD5D0", borderRadius: 14, padding: "18px 22px", display: "flex", alignItems: "center", gap: 20 },
-  cardLeft:       { textAlign: "center", minWidth: 66 },
-  bloodType:      { fontSize: 26, fontWeight: 800, color: "#C0392B" },
-  units:          { fontSize: 12, color: "#6B6B6B" },
-  cardMid:        { flex: 1, display: "flex", flexDirection: "column", gap: 4 },
-  cardRow:        { fontSize: 13, color: "#1C1C1C" },
-  cardLabel:      { color: "#6B6B6B" },
-  cardRight:      { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 },
-  actionBtns:     { display: "flex", gap: 8 },
-  fulfillBtn:     { display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "#1E8449", color: "#fff", border: "none", borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: "pointer" },
-  cancelBtn:      { padding: "6px 12px", background: "transparent", color: "#C0392B", border: "1px solid #C0392B", borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: "pointer" },
-};

@@ -192,6 +192,44 @@ export const IconHospitalLarge = ({ size = 52, color = "#C0392B" }) => (
     <rect x="6" y="16" width="40" height="32" rx="2" stroke={color} strokeWidth="2"/>
     <path d="M18 48V34h16v14" stroke={color} strokeWidth="2" strokeLinejoin="round"/>
     <path d="M20 8h12v8H20z" stroke={color} strokeWidth="2"/>
-    <path d="M23 26h6M26 23v6" stroke={color} strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+);
+
+export const IconHeartbeat = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+    <path d="M2 9h3l2 4 4-9 2 5h3" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+export const IconBell = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+    <path d="M9 2a4 4 0 0 0-4 4v3.5l-1.5 2v1h11v-1l-1.5-2V6a4 4 0 0 0-4-4z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M7.5 13.5a1.5 1.5 0 0 0 3 0" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+export const IconPower = ({ size = 24, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M12 2v10" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M18.36 6.64a9 9 0 1 1-12.73 0" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+export const IconMessage = ({ size = 16, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <path d="M14 10.5a1.5 1.5 0 0 1-1.5 1.5H5.5L2 14.5V4a1.5 1.5 0 0 1 1.5-1.5h9A1.5 1.5 0 0 1 14 4v6.5z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+export const IconMatch = ({ size = 16, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <circle cx="5" cy="8" r="3" stroke={color} strokeWidth="1.5"/>
+    <circle cx="11" cy="8" r="3" stroke={color} strokeWidth="1.5"/>
+  </svg>
+);
+
+export const IconFile = ({ size = 16, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <path d="M3 2.5a1 1 0 0 1 1-1h5.5l3.5 3.5v8a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-10.5z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );

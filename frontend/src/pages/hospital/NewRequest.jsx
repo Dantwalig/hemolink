@@ -1,233 +1,194 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../utils/AuthContext.jsx";
 import api from "../../utils/api.js";
-import { IconDashboard, IconBlood, IconBox, IconLogout, IconAlert } from "../../utils/Icons.jsx";
+import HospitalShell from "./HospitalShell.jsx";
 
-const NAV = [
-  { label: "Dashboard", path: "/hospital/dashboard", Icon: IconDashboard },
-  { label: "Requests",  path: "/hospital/requests",  Icon: IconBlood },
-  { label: "Inventory", path: "/hospital/inventory", Icon: IconBox },
-];
-
-const BLOOD_TYPES    = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-const URGENCY_LEVELS = ["low", "medium", "high", "critical"];
-const urgencyColor   = { low: "#1E8449", medium: "#F39C12", high: "#E67E22", critical: "#C0392B" };
+const BLOOD_TYPES    = ["A+","A-","B+","B-","AB+","AB-","O+","O-"];
+const URGENCY_LEVELS = ["low","medium","high","critical"];
+const URGENCY_META   = {
+  low:      { color:"#1E8449", bg:"rgba(30,132,73,.08)",   label:"Low — Routine, can wait a few days" },
+  medium:   { color:"#D4A017", bg:"rgba(212,160,23,.08)",  label:"Medium — Needed within 24 hours" },
+  high:     { color:"#E67E22", bg:"rgba(230,126,34,.08)",  label:"High — Needed within a few hours" },
+  critical: { color:"#C0392B", bg:"rgba(192,57,43,.08)",   label:"Critical — Immediate, life-threatening" },
+};
+const BLOOD_COLORS   = { "O+":"#C0392B","O-":"#922B21","A+":"#E67E22","A-":"#B7560F","B+":"#2E86C1","B-":"#1A5276","AB+":"#8E44AD","AB-":"#6C3483" };
 
 export default function NewRequest() {
-  const navigate         = useNavigate();
-  const { user, logout } = useAuth();
-
-  const [form, setForm] = useState({ bloodTypeCode: "", unitsNeeded: "", urgencyLevel: "", neededBy: "" });
-  const [errors,      setErrors]      = useState({});
-  const [loading,     setLoading]     = useState(false);
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ bloodTypeCode:"", unitsNeeded:"", urgencyLevel:"", neededBy:"" });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [result, setResult] = useState(null);
 
   const set = (field, val) => {
-    setForm(f => ({ ...f, [field]: val }));
+    setForm(f => ({ ...f, [field]:val }));
     if (errors[field]) validate(field, val);
   };
 
-  const validate = (field, val = form[field]) => {
+  const validate = (field, val=form[field]) => {
     let err = "";
-    if (field === "bloodTypeCode" && !val)  err = "Select a blood type.";
-    if (field === "unitsNeeded") {
-      const n = parseInt(val, 10);
-      if (!val || isNaN(n) || n < 1)        err = "Enter a positive number of units.";
-    }
-    if (field === "urgencyLevel" && !val)   err = "Select an urgency level.";
-    if (field === "neededBy") {
-      if (!val)                             err = "Select a date and time.";
-      else if (new Date(val) <= new Date()) err = "Needed-by must be in the future.";
-    }
-    setErrors(e => ({ ...e, [field]: err }));
+    if (field==="bloodTypeCode" && !val) err = "Select a blood type.";
+    if (field==="unitsNeeded") { const n=parseInt(val,10); if (!val||isNaN(n)||n<1) err = "Enter a positive number of units."; }
+    if (field==="urgencyLevel" && !val) err = "Select an urgency level.";
+    if (field==="neededBy") { if (!val) err = "Select a date and time."; else if (new Date(val)<=new Date()) err = "Needed-by must be in the future."; }
+    setErrors(e => ({ ...e, [field]:err }));
     return !err;
   };
 
-  const validateAll = () => {
-    const fields  = ["bloodTypeCode", "unitsNeeded", "urgencyLevel", "neededBy"];
-    return fields.map(f => validate(f)).every(Boolean);
-  };
+  const validateAll = () => ["bloodTypeCode","unitsNeeded","urgencyLevel","neededBy"].map(f=>validate(f)).every(Boolean);
 
   const handleSubmit = async () => {
     if (!validateAll()) return;
-    setLoading(true);
-    setServerError("");
+    setLoading(true); setServerError("");
     try {
-      await api.post("/requests", {
+      const res = await api.post("/requests", {
         bloodTypeCode: form.bloodTypeCode,
-        unitsNeeded:   parseInt(form.unitsNeeded, 10),
+        unitsNeeded:   parseInt(form.unitsNeeded,10),
         urgencyLevel:  form.urgencyLevel,
         neededBy:      new Date(form.neededBy).toISOString(),
       });
-      navigate("/hospital/requests");
+      setResult(res.data.data);
     } catch (err) {
       setServerError(err.response?.data?.message || "Failed to create request.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  const handleLogout = () => { logout(); navigate("/hospital-login"); };
+  const selStyle = (hasErr, hasVal) => ({
+    width:"100%", padding:"13px 14px", border:`1.5px solid ${hasErr?"#C0392B":hasVal?"#1E8449":"#E8D5D0"}`,
+    borderRadius:10, fontSize:14, fontFamily:"'Sora',sans-serif", color:hasVal?"#1a0a07":"#BBA0A0",
+    background:"#fff", cursor:"pointer", transition:"border-color .18s",
+  });
+
+  // Success state
+  if (result) {
+    const matched = result.request?.matchedDonors ?? result.matchedDonors ?? 0;
+    const notified = result.notified ?? matched;
+    const bt = result.request?.bloodTypeCode || form.bloodTypeCode;
+    const bc = BLOOD_COLORS[bt]||"#C0392B";
+
+    return (
+      <HospitalShell title="Request Created" subtitle="Donors are being notified.">
+        <div style={{ maxWidth:540, margin:"0 auto", background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:24, padding:"48px", boxShadow:"0 12px 40px rgba(140,20,20,.1)", textAlign:"center" }}>
+          <div style={{ width:80, height:80, background:"rgba(30,132,73,.1)", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px" }}>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="15" stroke="#1E8449" strokeWidth="2"/><path d="M10 18l6 6 10-12" stroke="#1E8449" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          <h2 style={{ fontSize:26, fontWeight:800, color:"#1a0a07", marginBottom:10 }}>Request Sent!</h2>
+          <p style={{ fontSize:15, color:"#7A4A45", lineHeight:1.7, marginBottom:28 }}>Your blood request has been submitted. Our matching engine has found and notified compatible donors.</p>
+
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:28 }}>
+            {[
+              { label:"Blood Type", value:bt, style:{ color:bc, fontFamily:"'Lora',serif", fontWeight:900 } },
+              { label:"Donors Notified", value:notified, style:{ color:"#1E8449" } },
+              { label:"Urgency", value:form.urgencyLevel, style:{ color:URGENCY_META[form.urgencyLevel]?.color||"#C0392B", textTransform:"capitalize" } },
+            ].map(({ label, value, style: s }) => (
+              <div key={label} style={{ background:"rgba(192,57,43,.04)", border:"1px solid rgba(192,57,43,.1)", borderRadius:12, padding:"14px 10px" }}>
+                <div style={{ fontSize:24, fontWeight:800, marginBottom:6, ...s }}>{value}</div>
+                <div style={{ fontSize:11, color:"#9B7B77", textTransform:"uppercase", letterSpacing:.6, fontWeight:600 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {notified===0 && (
+            <div style={{ background:"rgba(230,126,34,.08)", border:"1.5px solid rgba(230,126,34,.25)", borderRadius:12, padding:"14px 16px", marginBottom:22, fontSize:13, color:"#B7560F", lineHeight:1.6 }}>
+              No donors were matched at this time. This may be because your hospital doesn't have GPS coordinates set, or no donors with the required blood type are currently available in your area.
+            </div>
+          )}
+
+          <div style={{ display:"flex", gap:12, justifyContent:"center" }}>
+            <button className="hl-btn-red" onClick={()=>navigate("/hospital/requests")} style={{ padding:"12px 28px" }}>View All Requests</button>
+            <button className="hl-ghost" onClick={()=>{ setResult(null); setForm({ bloodTypeCode:"", unitsNeeded:"", urgencyLevel:"", neededBy:"" }); }}>Create Another</button>
+          </div>
+        </div>
+      </HospitalShell>
+    );
+  }
 
   return (
-    <div style={styles.shell}>
-      <aside style={styles.sidebar}>
-        <div style={styles.sidebarLogo}>
-          <div style={styles.logoDrop}><span style={styles.logoDropText}>H</span></div>
-          <span style={styles.logoText}>Hemo<span style={styles.logoRed}>Link</span></span>
-        </div>
-        <div style={styles.sidebarHospital}>{user?.name || "Hospital"}</div>
-        <nav style={styles.nav}>
-          {NAV.map(({ label, path, Icon }) => (
-            <button key={path}
-              style={{ ...styles.navItem, ...(window.location.pathname === path ? styles.navItemActive : {}) }}
-              onClick={() => navigate(path)}>
-              <Icon size={16} color={window.location.pathname === path ? "#fff" : "rgba(255,255,255,0.6)"} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-        <button style={styles.logoutBtn} onClick={handleLogout}>
-          <IconLogout size={14} color="rgba(255,255,255,0.4)" /><span>Log Out</span>
-        </button>
-      </aside>
+    <HospitalShell title="New Blood Request" subtitle="Create an urgent blood request and alert matching donors.">
+      <div style={{ maxWidth:580, margin:"0 auto" }}>
+        {serverError && (
+          <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:20, fontWeight:500 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#C0392B" strokeWidth="1.4"/><path d="M8 5v3M8 10.5v.5" stroke="#C0392B" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            {serverError}
+          </div>
+        )}
 
-      <main style={styles.main}>
-        <div style={styles.topBar}>
-          <button style={styles.backBtn} onClick={() => navigate("/hospital/requests")}>&larr; Back to Requests</button>
-          <h1 style={styles.pageTitle}>New Blood Request</h1>
-          <p style={styles.pageSub}>Submit an emergency blood request. Matching donors will be notified by SMS.</p>
-        </div>
-
-        <div style={styles.formCard}>
-          {serverError && (
-            <div style={styles.alertError}><IconAlert size={14} /> {serverError}</div>
-          )}
-
-          <div style={styles.fieldGrid}>
-
-            {/* Blood Type */}
-            <div style={styles.field}>
-              <label style={styles.label}>Blood Type <span style={styles.req}>*</span></label>
-              <div style={styles.bloodTypePicker}>
-                {BLOOD_TYPES.map(bt => (
-                  <button key={bt} type="button"
-                    style={{ ...styles.btOption, ...(form.bloodTypeCode === bt ? styles.btOptionActive : {}) }}
-                    onClick={() => set("bloodTypeCode", bt)}>
+        <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:20, padding:"36px", boxShadow:"0 4px 16px rgba(140,20,20,.06)", display:"flex", flexDirection:"column", gap:24 }}>
+          {/* Blood type selector */}
+          <div>
+            <label style={{ display:"block", fontSize:13, fontWeight:600, color:"#4A2020", marginBottom:10, letterSpacing:.2 }}>Blood Type Required <span style={{ color:"#C0392B" }}>*</span></label>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
+              {BLOOD_TYPES.map(bt => {
+                const c = BLOOD_COLORS[bt]||"#C0392B";
+                const sel = form.bloodTypeCode===bt;
+                return (
+                  <button key={bt} type="button" onClick={()=>set("bloodTypeCode",bt)}
+                    style={{ padding:"14px 8px", borderRadius:12, border:`2px solid ${sel?c:"#E8D5D0"}`, background:sel?`${c}12`:"#fff", color:sel?c:"#9B7B77", fontFamily:"'Lora',serif", fontSize:20, fontWeight:900, cursor:"pointer", transition:"all .18s", boxShadow:sel?`0 4px 12px ${c}33`:"none" }}>
                     {bt}
                   </button>
-                ))}
-              </div>
-              {errors.bloodTypeCode && <span style={styles.errorMsg}><IconAlert size={12} /> {errors.bloodTypeCode}</span>}
+                );
+              })}
             </div>
-
-            {/* Units Needed */}
-            <div style={styles.field}>
-              <label style={styles.label}>Units Needed <span style={styles.req}>*</span></label>
-              <input type="number" min="1" value={form.unitsNeeded}
-                onChange={e => set("unitsNeeded", e.target.value)}
-                onBlur={() => validate("unitsNeeded")}
-                placeholder="e.g. 2"
-                style={{ ...styles.input, borderColor: errors.unitsNeeded ? "#C0392B" : "#DDD5D0" }} />
-              {errors.unitsNeeded && <span style={styles.errorMsg}><IconAlert size={12} /> {errors.unitsNeeded}</span>}
-            </div>
-
-            {/* Urgency Level */}
-            <div style={styles.field}>
-              <label style={styles.label}>Urgency Level <span style={styles.req}>*</span></label>
-              <div style={styles.urgencyPicker}>
-                {URGENCY_LEVELS.map(level => (
-                  <button key={level} type="button"
-                    style={{
-                      ...styles.urgencyOption,
-                      ...(form.urgencyLevel === level ? { background: urgencyColor[level], color: "#fff", borderColor: urgencyColor[level] } : {}),
-                    }}
-                    onClick={() => set("urgencyLevel", level)}>
-                    {level.charAt(0).toUpperCase() + level.slice(1)}
-                  </button>
-                ))}
-              </div>
-              {errors.urgencyLevel && <span style={styles.errorMsg}><IconAlert size={12} /> {errors.urgencyLevel}</span>}
-            </div>
-
-            {/* Needed By */}
-            <div style={styles.field}>
-              <label style={styles.label}>Needed By <span style={styles.req}>*</span></label>
-              <input type="datetime-local" value={form.neededBy}
-                onChange={e => set("neededBy", e.target.value)}
-                onBlur={() => validate("neededBy")}
-                style={{ ...styles.input, borderColor: errors.neededBy ? "#C0392B" : "#DDD5D0" }} />
-              {errors.neededBy && <span style={styles.errorMsg}><IconAlert size={12} /> {errors.neededBy}</span>}
-            </div>
+            {errors.bloodTypeCode && <span style={{ display:"block", fontSize:12, color:"#C0392B", marginTop:6, fontWeight:500 }}>{errors.bloodTypeCode}</span>}
           </div>
 
-          {/* Preview */}
-          {form.bloodTypeCode && form.unitsNeeded && form.urgencyLevel && (
-            <div style={styles.preview}>
-              <div style={styles.previewTitle}>Request Preview</div>
-              <div style={styles.previewContent}>
-                <span><strong>{form.bloodTypeCode}</strong></span>
-                <span>&middot; {form.unitsNeeded} unit{form.unitsNeeded !== "1" ? "s" : ""}</span>
-                <span style={{ color: urgencyColor[form.urgencyLevel], fontWeight: 600 }}>
-                  &middot; {form.urgencyLevel} urgency
-                </span>
-                {form.neededBy && (
-                  <span>&middot; by {new Date(form.neededBy).toLocaleString("en-RW", { dateStyle: "medium", timeStyle: "short" })}</span>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Units needed */}
+          <div>
+            <label style={{ display:"block", fontSize:13, fontWeight:600, color:"#4A2020", marginBottom:8, letterSpacing:.2 }}>Units Needed <span style={{ color:"#C0392B" }}>*</span></label>
+            <input type="number" min="1" value={form.unitsNeeded} onChange={e=>set("unitsNeeded",e.target.value)} onBlur={()=>validate("unitsNeeded")}
+              placeholder="e.g. 2"
+              style={{ width:"100%", padding:"13px 14px", border:`1.5px solid ${errors.unitsNeeded?"#C0392B":form.unitsNeeded?"#1E8449":"#E8D5D0"}`, borderRadius:10, fontSize:15, fontFamily:"'Sora',sans-serif", color:"#1a0a07", transition:"border-color .18s" }}/>
+            {errors.unitsNeeded && <span style={{ display:"block", fontSize:12, color:"#C0392B", marginTop:6, fontWeight:500 }}>{errors.unitsNeeded}</span>}
+          </div>
 
-          <div style={styles.actions}>
-            <button style={styles.cancelBtn} onClick={() => navigate("/hospital/requests")}>Cancel</button>
-            <button style={{ ...styles.submitBtn, ...(loading ? styles.submitDisabled : {}) }}
-              onClick={handleSubmit} disabled={loading}>
-              {loading ? "Submitting…" : "Submit Request"}
+          {/* Urgency level */}
+          <div>
+            <label style={{ display:"block", fontSize:13, fontWeight:600, color:"#4A2020", marginBottom:10, letterSpacing:.2 }}>Urgency Level <span style={{ color:"#C0392B" }}>*</span></label>
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {URGENCY_LEVELS.map(lvl => {
+                const meta = URGENCY_META[lvl];
+                const sel = form.urgencyLevel===lvl;
+                return (
+                  <button key={lvl} type="button" onClick={()=>set("urgencyLevel",lvl)}
+                    style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 16px", borderRadius:12, border:`2px solid ${sel?meta.color:"#E8D5D0"}`, background:sel?meta.bg:"#fff", cursor:"pointer", textAlign:"left", transition:"all .18s" }}>
+                    <div style={{ width:12, height:12, borderRadius:"50%", background:meta.color, flexShrink:0, boxShadow:sel?`0 0 0 3px ${meta.color}33`:"none" }}/>
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:700, color:sel?meta.color:"#1a0a07", textTransform:"capitalize", marginBottom:2 }}>{lvl}</div>
+                      <div style={{ fontSize:12, color:"#9B7B77" }}>{meta.label}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {errors.urgencyLevel && <span style={{ display:"block", fontSize:12, color:"#C0392B", marginTop:6, fontWeight:500 }}>{errors.urgencyLevel}</span>}
+          </div>
+
+          {/* Needed by */}
+          <div>
+            <label style={{ display:"block", fontSize:13, fontWeight:600, color:"#4A2020", marginBottom:8, letterSpacing:.2 }}>Needed By <span style={{ color:"#C0392B" }}>*</span></label>
+            <input type="datetime-local" value={form.neededBy} onChange={e=>set("neededBy",e.target.value)} onBlur={()=>validate("neededBy")}
+              min={new Date().toISOString().slice(0,16)}
+              style={{ width:"100%", padding:"13px 14px", border:`1.5px solid ${errors.neededBy?"#C0392B":form.neededBy?"#1E8449":"#E8D5D0"}`, borderRadius:10, fontSize:14, fontFamily:"'Sora',sans-serif", color:"#1a0a07", transition:"border-color .18s" }}/>
+            {errors.neededBy && <span style={{ display:"block", fontSize:12, color:"#C0392B", marginTop:6, fontWeight:500 }}>{errors.neededBy}</span>}
+          </div>
+
+          {/* Info banner */}
+          <div style={{ display:"flex", gap:10, padding:"14px 16px", background:"rgba(192,57,43,.04)", border:"1px solid rgba(192,57,43,.12)", borderRadius:12 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink:0, marginTop:1 }}><circle cx="8" cy="8" r="6.5" stroke="#C0392B" strokeWidth="1.3"/><path d="M8 5v4M8 11.5v.5" stroke="#C0392B" strokeWidth="1.3" strokeLinecap="round"/></svg>
+            <p style={{ fontSize:13, color:"#7A4A45", lineHeight:1.6 }}>Once submitted, HemoLink will instantly find compatible donors near your hospital and send them SMS alerts. Donors will confirm or decline within seconds.</p>
+          </div>
+
+          {/* Submit */}
+          <div style={{ display:"flex", gap:12 }}>
+            <button type="button" className="hl-ghost" onClick={()=>navigate("/hospital/requests")} style={{ flex:1 }}>Cancel</button>
+            <button type="button" disabled={loading} onClick={handleSubmit}
+              style={{ flex:2, padding:"14px", background:"linear-gradient(135deg,#C0392B,#8B1A1A)", color:"#fff", border:"none", borderRadius:11, fontSize:15, fontWeight:700, cursor:loading?"not-allowed":"pointer", fontFamily:"'Sora',sans-serif", boxShadow:"0 6px 20px rgba(192,57,43,.38)", opacity:loading?.65:1, transition:"all .2s" }}>
+              {loading ? "Submitting & Notifying Donors…" : "Submit Blood Request →"}
             </button>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </HospitalShell>
   );
 }
-
-const styles = {
-  shell:          { display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif", background: "#F7F3EF" },
-  sidebar:        { width: 220, background: "#1C1C1C", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" },
-  sidebarLogo:    { display: "flex", alignItems: "center", gap: 8, padding: "0 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)" },
-  logoDrop:       { width: 28, height: 28, background: "#C0392B", borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", display: "flex", alignItems: "center", justifyContent: "center" },
-  logoDropText:   { transform: "rotate(45deg)", color: "#fff", fontWeight: 800, fontSize: 11 },
-  logoText:       { fontWeight: 800, fontSize: 16, color: "#fff" },
-  logoRed:        { color: "#C0392B" },
-  sidebarHospital:{ fontSize: 11, color: "rgba(255,255,255,0.4)", padding: "12px 20px 4px", textTransform: "uppercase", letterSpacing: 0.5 },
-  nav:            { flex: 1, display: "flex", flexDirection: "column", padding: "8px 12px", gap: 2 },
-  navItem:        { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 14, cursor: "pointer", borderRadius: 8, textAlign: "left" },
-  navItemActive:  { background: "rgba(192,57,43,0.25)", color: "#fff", fontWeight: 600 },
-  logoutBtn:      { display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", padding: "16px 20px" },
-  main:           { flex: 1, padding: "32px 40px", overflowY: "auto", height: "100vh" },
-  topBar:         { marginBottom: 22 },
-  backBtn:        { background: "none", border: "none", color: "#6B6B6B", fontSize: 13, cursor: "pointer", padding: 0, marginBottom: 8, display: "block" },
-  pageTitle:      { fontSize: 24, fontWeight: 800, color: "#1C1C1C", marginBottom: 4 },
-  pageSub:        { fontSize: 14, color: "#6B6B6B" },
-  formCard:       { background: "#fff", border: "1px solid #DDD5D0", borderRadius: 16, padding: "28px 32px", maxWidth: 640 },
-  alertError:     { display: "flex", alignItems: "center", gap: 8, background: "#FDEDEC", color: "#C0392B", border: "1px solid #F1948A", borderRadius: 9, padding: "12px 16px", marginBottom: 20, fontSize: 13 },
-  fieldGrid:      { display: "flex", flexDirection: "column", gap: 22 },
-  field:          { display: "flex", flexDirection: "column", gap: 8 },
-  label:          { fontSize: 13, fontWeight: 600, color: "#1C1C1C" },
-  req:            { color: "#C0392B" },
-  input:          { padding: "11px 14px", border: "1.5px solid #DDD5D0", borderRadius: 9, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1C1C1C", outline: "none" },
-  errorMsg:       { fontSize: 12, color: "#C0392B", display: "flex", alignItems: "center", gap: 4 },
-  bloodTypePicker:{ display: "flex", gap: 8, flexWrap: "wrap" },
-  btOption:       { width: 52, height: 42, border: "2px solid #DDD5D0", borderRadius: 9, background: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1C1C1C" },
-  btOptionActive: { background: "#C0392B", color: "#fff", borderColor: "#C0392B" },
-  urgencyPicker:  { display: "flex", gap: 8 },
-  urgencyOption:  { flex: 1, padding: "9px 0", border: "2px solid #DDD5D0", borderRadius: 9, background: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#1C1C1C", textTransform: "capitalize" },
-  preview:        { background: "#FDF6EE", border: "1px solid #DDD5D0", borderRadius: 10, padding: "12px 16px", marginTop: 20 },
-  previewTitle:   { fontSize: 11, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
-  previewContent: { display: "flex", gap: 10, flexWrap: "wrap", fontSize: 14, color: "#1C1C1C" },
-  actions:        { display: "flex", gap: 12, marginTop: 26 },
-  cancelBtn:      { padding: "12px 24px", background: "transparent", color: "#6B6B6B", border: "1px solid #DDD5D0", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" },
-  submitBtn:      { flex: 1, padding: 13, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer" },
-  submitDisabled: { background: "#ccc", cursor: "not-allowed" },
-};

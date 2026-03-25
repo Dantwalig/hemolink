@@ -14,7 +14,7 @@ const getByToken = async (req, res, next) => {
       include: {
         bloodRequest: {
           include: {
-            hospital:  { select: { name: true, sector: true, districtCode: true } },
+            hospital:  { select: { name: true, sector: true, districtCode: true, latitude: true, longitude: true } },
             bloodType: true,
           },
         },
@@ -37,10 +37,24 @@ const getByToken = async (req, res, next) => {
     }
 
     // Haversine distance (km) between donor and hospital
-    // We don't have hospital coords always, so fall back to district name
-    const distance = notification.donor.latitude && notification.bloodRequest.hospital
-      ? null  // full haversine calc would go here once hospital coords are reliable
-      : null;
+    const hospital = notification.bloodRequest.hospital;
+    let distance = null;
+    if (
+      notification.donor.latitude != null &&
+      notification.donor.longitude != null &&
+      hospital.latitude != null &&
+      hospital.longitude != null
+    ) {
+      const R    = 6371;
+      const dLat = ((hospital.latitude  - notification.donor.latitude)  * Math.PI) / 180;
+      const dLon = ((hospital.longitude - notification.donor.longitude) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((notification.donor.latitude  * Math.PI) / 180) *
+        Math.cos((hospital.latitude * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+      distance = parseFloat((R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1));
+    }
 
     return success(res, {
       notification_id:  notification.notificationId,
