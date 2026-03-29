@@ -254,7 +254,7 @@ export default function DonorDashboard() {
                   { label:"Full Name",    value:profile?.fullName, Icon:IconUser },
                   { label:"Phone",        value:profile?.phone,    Icon:IconPhone },
                   { label:"Blood Type",   value:profile?.bloodTypeCode, Icon:IconBlood },
-                  { label:"Location",     value: profile?.districtCode ? (DISTRICT_NAMES[profile.districtCode] || profile.districtCode) : "Not set", Icon:IconPin },
+                  { label:"Location",     value: profile?.districtCode ? (DISTRICT_NAMES[profile.districtCode] || profile.districtCode) : (profile?.latitude ? `${parseFloat(profile.latitude).toFixed(4)}, ${parseFloat(profile.longitude).toFixed(4)}` : "Not set"), Icon:IconPin },
                   { label:"Member Since", value:profile?.createdAt
                     ? new Date(profile.createdAt).toLocaleDateString("en-RW", { dateStyle:"medium" })
                     : "—", Icon:IconCalendar },

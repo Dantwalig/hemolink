@@ -78,6 +78,7 @@ export default function HomePage() {
         <nav style={S.nav} className="hl-header-nav">
           <button className="hl-nav-btn" onClick={() => navigate("/login")}>{t("nav.donorLogin")}</button>
           <button className="hl-nav-btn" onClick={() => navigate("/hospital-login")}>{t("nav.hospitalLogin")}</button>
+          <button className="hl-nav-btn" onClick={() => navigate("/hospital/register")}>Register Hospital</button>
           <button className="hl-nav-primary" onClick={() => navigate("/register")}>{t("nav.registerDonor")}</button>
           <LanguageSwitcher />
         </nav>
@@ -112,6 +113,7 @@ export default function HomePage() {
           <p style={S.heroSub}>{t("home.heroSubtitle")}</p>
           <div style={S.heroBtns}>
             <button className="hl-btn-primary" onClick={() => navigate("/register")}>{t("home.heroCta")} →</button>
+            <button className="hl-btn-outline" onClick={() => navigate("/hospital/register")}>Register Hospital</button>
             <button className="hl-btn-outline" onClick={() => navigate("/hospital-login")}>{t("home.hospitalPortal")}</button>
           </div>
         </div>
