@@ -154,7 +154,7 @@ export function DashShell({ nav, user, onLogout, children, logoLabel = "Rwanda",
         .hl-logout:hover{color:rgba(255,255,255,.65);}
       `}</style>
       {/* Sidebar */}
-      <aside style={{ width:230, background:"linear-gradient(185deg,#1a0505 0%,#0f0000 100%)", display:"flex", flexDirection:"column", padding:"24px 0", flexShrink:0, position:"sticky", top:0, height:"100vh", borderRight:"1px solid rgba(192,57,43,.15)" }}>
+      <aside style={{ width:230, background:"linear-gradient(185deg,#C0392B 0%,#7D1212 100%)", display:"flex", flexDirection:"column", padding:"24px 0", flexShrink:0, position:"sticky", top:0, height:"100vh", borderRight:"1px solid rgba(192,57,43,.15)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 20px 18px", borderBottom:"1px solid rgba(255,255,255,.07)", marginBottom:8 }}>
           <LogoDrop size={30}/>
           <div>
