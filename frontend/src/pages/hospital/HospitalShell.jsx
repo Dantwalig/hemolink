@@ -25,36 +25,36 @@ export default function HospitalShell({ children, title, subtitle, action }) {
   return (
     <div style={{ display:"flex", height:"100vh", overflow:"hidden", fontFamily:"'Sora',sans-serif", background:"#FDF4F2" }}>
       <style>{SORA_FONT + SHARED_BTN_CSS + `
-        .hosp-nav{display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;cursor:pointer;border-radius:10px;text-align:left;font-family:'Sora',sans-serif;font-weight:500;transition:all .16s;width:100%;}
-        .hosp-nav:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.82);}
-        .hosp-nav-active{background:rgba(192,57,43,.3) !important;color:#fff !important;font-weight:700 !important;}
-        .hosp-logout{display:flex;align-items:center;gap:8px;background:none;border:none;color:rgba(255,255,255,.28);font-size:13px;cursor:pointer;padding:14px 20px;font-family:'Sora',sans-serif;transition:color .18s;width:100%;}
-        .hosp-logout:hover{color:rgba(255,255,255,.6);}
+        .hosp-nav{display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;border-radius:10px;text-align:left;font-family:'Sora',sans-serif;font-weight:500;transition:all .16s;width:100%;}
+        .hosp-nav:hover{background:rgba(0,0,0,.18);color:#fff;}
+        .hosp-nav-active{background:rgba(0,0,0,.28) !important;color:#fff !important;font-weight:700 !important;box-shadow:inset 3px 0 0 #FFB3A7;}
+        .hosp-logout{display:flex;align-items:center;gap:8px;background:none;border:none;color:rgba(255,255,255,.4);font-size:13px;cursor:pointer;padding:14px 20px;font-family:'Sora',sans-serif;transition:color .18s;width:100%;}
+        .hosp-logout:hover{color:rgba(255,255,255,.8);}
         ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:#E8D5D0;border-radius:3px;}
         @keyframes hl-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.4);}}
       `}</style>
 
       {/* Sidebar */}
-      <aside style={{ width:230, background:"linear-gradient(185deg,#1a0505 0%,#0a0000 100%)", display:"flex", flexDirection:"column", padding:"24px 0", flexShrink:0, position:"sticky", top:0, height:"100vh", borderRight:"1px solid rgba(192,57,43,.12)" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 20px 18px", borderBottom:"1px solid rgba(255,255,255,.06)", marginBottom:8 }}>
+      <aside style={{ width:230, background:"linear-gradient(185deg,#8B1A1A 0%,#6B0E0E 50%,#4A0808 100%)", display:"flex", flexDirection:"column", padding:"24px 0", flexShrink:0, position:"sticky", top:0, height:"100vh", borderRight:"1px solid rgba(0,0,0,.15)", boxShadow:"4px 0 24px rgba(139,26,26,.35)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 20px 18px", borderBottom:"1px solid rgba(255,255,255,.1)", marginBottom:8 }}>
           <LogoDrop size={30}/>
           <div>
-            <div style={{ fontWeight:800, fontSize:15, color:"#fff" }}>Hemo<span style={{ color:"#E87B6E" }}>Link</span></div>
-            <div style={{ fontSize:9, color:"#E87B6E", textTransform:"uppercase", letterSpacing:1.2, fontWeight:700, marginTop:2 }}>Hospital</div>
+            <div style={{ fontWeight:800, fontSize:15, color:"#fff" }}>Hemo<span style={{ color:"#FFB3A7" }}>Link</span></div>
+            <div style={{ fontSize:9, color:"#FFB3A7", textTransform:"uppercase", letterSpacing:1.2, fontWeight:700, marginTop:2 }}>Hospital</div>
           </div>
         </div>
 
         {user?.name && (
-          <div style={{ padding:"6px 20px 14px", borderBottom:"1px solid rgba(255,255,255,.05)", marginBottom:6 }}>
-            <div style={{ fontSize:11, color:"rgba(255,255,255,.28)", marginBottom:2 }}>Logged in as</div>
-            <div style={{ fontSize:12, color:"rgba(255,255,255,.55)", fontWeight:600, lineHeight:1.35 }}>{user.name}</div>
+          <div style={{ padding:"6px 20px 14px", borderBottom:"1px solid rgba(255,255,255,.1)", marginBottom:6 }}>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.45)", marginBottom:2 }}>Logged in as</div>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,.85)", fontWeight:600, lineHeight:1.35 }}>{user.name}</div>
           </div>
         )}
 
         <nav style={{ flex:1, display:"flex", flexDirection:"column", padding:"4px 12px", gap:2 }}>
           {NAV.map(({ label, path: np, Icon }) => (
             <button key={np} className={`hosp-nav${path===np?" hosp-nav-active":""}`} onClick={()=>navigate(np)}>
-              <Icon s={16} c={path===np?"#fff":"rgba(255,255,255,.45)"}/>
+              <Icon s={16} c={path===np?"#fff":"rgba(255,255,255,.6)"}/>
               <span>{label}</span>
             </button>
           ))}
