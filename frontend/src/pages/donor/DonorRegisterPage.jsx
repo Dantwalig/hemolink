@@ -111,12 +111,28 @@ export default function DonorRegisterPage() {
  const getLocation = () => {
   if (!navigator.geolocation) { setLocationStatus("denied"); return; }
   setLocationStatus("loading");
+  const options = { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 };
   navigator.geolocation.getCurrentPosition(
    (pos) => {
     setForm((f) => ({ ...f, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
     setLocationStatus("granted");
    },
-   () => setLocationStatus("denied")
+   (err) => {
+    if (err.code === 1) {
+     setLocationStatus("denied");
+    } else {
+     // TIMEOUT or POSITION_UNAVAILABLE — retry once with low accuracy
+     navigator.geolocation.getCurrentPosition(
+      (pos) => {
+       setForm((f) => ({ ...f, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
+       setLocationStatus("granted");
+      },
+      () => setLocationStatus("denied"),
+      { enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 }
+     );
+    }
+   },
+   options
   );
  };
 
@@ -283,7 +299,7 @@ export default function DonorRegisterPage() {
           {locationStatus === "idle"  && "Required so hospitals can find nearby donors."}
           {locationStatus === "loading" && "Getting your location…"}
           {locationStatus === "granted" && `Location saved (${form.latitude?.toFixed(4)}, ${form.longitude?.toFixed(4)})`}
-          {locationStatus === "denied" && "Location denied. Please enable browser location access."}
+          {locationStatus === "denied" && "Could not get location. Please allow location access in your browser and try again."}
          </div>
          {touched.location && errors.location && (
           <span style={{ ...styles.errorMsg, display: "block", marginTop: 4 }}>{errors.location}</span>
