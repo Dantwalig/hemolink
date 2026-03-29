@@ -1,0 +1,53 @@
+/* HemoLink Rwanda — Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Sora', sans-serif;
+  background: #FDF4F2;
+  color: #1a0a07;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input, select, textarea, button {
+  font-family: 'Sora', sans-serif;
+}
+
+input::placeholder { color: #BBA0A0; }
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #C0392B !important;
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.1);
+}
+
+@keyframes hl-spin { to { transform: rotate(360deg); } }
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.55; transform: scale(1.4); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes floatDrop {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+@keyframes bloodFall {
+  0%   { transform: translateY(-40px); opacity: 0; }
+  8%   { opacity: 0.5; }
+  90%  { opacity: 0.25; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E8D5D0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #C0392B; }

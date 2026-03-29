@@ -14,7 +14,7 @@ const getByToken = async (req, res, next) => {
       include: {
         bloodRequest: {
           include: {
-            hospital:  { select: { name: true, sector: true, districtCode: true } },
+            hospital:  { select: { name: true, sector: true, districtCode: true, latitude: true, longitude: true } },
             bloodType: true,
           },
         },
@@ -37,10 +37,24 @@ const getByToken = async (req, res, next) => {
     }
 
     // Haversine distance (km) between donor and hospital
-    // We don't have hospital coords always, so fall back to district name
-    const distance = notification.donor.latitude && notification.bloodRequest.hospital
-      ? null  // full haversine calc would go here once hospital coords are reliable
-      : null;
+    const hospital = notification.bloodRequest.hospital;
+    let distance = null;
+    if (
+      notification.donor.latitude != null &&
+      notification.donor.longitude != null &&
+      hospital.latitude != null &&
+      hospital.longitude != null
+    ) {
+      const R    = 6371;
+      const dLat = ((hospital.latitude  - notification.donor.latitude)  * Math.PI) / 180;
+      const dLon = ((hospital.longitude - notification.donor.longitude) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((notification.donor.latitude  * Math.PI) / 180) *
+        Math.cos((hospital.latitude * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+      distance = parseFloat((R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1));
+    }
 
     return success(res, {
       notification_id:  notification.notificationId,
@@ -122,4 +136,26 @@ const generateToken = async (req, res, next) => {
   }
 };
 
-module.exports = { getByToken, respond, generateToken };
+
+// GET /api/notifications/my  — donor sees their own notification history
+const getMyNotifications = async (req, res, next) => {
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: { donorId: req.user.id },
+      include: {
+        bloodRequest: {
+          include: {
+            hospital: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { sentAt: "desc" },
+      take: 50,
+    });
+    return success(res, notifications, "Notifications retrieved.");
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getByToken, respond, generateToken, getMyNotifications };

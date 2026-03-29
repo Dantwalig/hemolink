@@ -3,9 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HemoLink</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+    <title>HemoLink Rwanda — Emergency Blood Matching</title>
+    <meta name="description" content="HemoLink connects blood donors to hospitals in Rwanda in real time. Register once. Save lives." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: 'Sora', sans-serif; background: #FDF4F2; color: #1a0a07; -webkit-font-smoothing: antialiased; }
+      #root { height: 100%; }
+      /* Global scrollbar */
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #E8D5D0; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #C0392B; }
+      /* Leaflet fix */
+      .leaflet-container { font-family: 'Sora', sans-serif !important; }
+    </style>
   </head>
   <body>
     <div id="root"></div>

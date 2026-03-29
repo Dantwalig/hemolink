@@ -70,7 +70,8 @@ model Donor {
   latitude      Float
   longitude     Float
   available     Boolean @default(true)
-  consentSms    Boolean @map("consent_sms")
+  consentSms    Boolean  @map("consent_sms")
+  createdAt     DateTime @default(now()) @map("created_at")
 
   bloodType     BloodType      @relation(fields: [bloodTypeCode], references: [bloodTypeCode])
   notifications Notification[]
