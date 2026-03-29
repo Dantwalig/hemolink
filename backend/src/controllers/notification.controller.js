@@ -136,4 +136,26 @@ const generateToken = async (req, res, next) => {
   }
 };
 
-module.exports = { getByToken, respond, generateToken };
+
+// GET /api/notifications/my  — donor sees their own notification history
+const getMyNotifications = async (req, res, next) => {
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: { donorId: req.user.id },
+      include: {
+        bloodRequest: {
+          include: {
+            hospital: { select: { name: true } },
+          },
+        },
+      },
+      orderBy: { sentAt: "desc" },
+      take: 50,
+    });
+    return success(res, notifications, "Notifications retrieved.");
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getByToken, respond, generateToken, getMyNotifications };

@@ -52,7 +52,7 @@ export default function HospitalLoginPage() {
     setLoading(true); setServerError("");
     try {
       const res = await api.post("/hospitals/login", { email: form.email, password: form.password });
-      login(res.data.data.hospital, res.data.data.token);
+      login({ ...res.data.data.hospital, role: "hospital" }, res.data.data.token);
       navigate("/hospital/dashboard");
     } catch (err) {
       setServerError(err.response?.data?.message || "Login failed. Please try again.");

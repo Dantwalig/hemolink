@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authenticate, authorize } = require("../middlewares/auth");
-const { getByToken, respond, generateToken } = require("../controllers/notification.controller");
+const { getByToken, respond, generateToken, getMyNotifications } = require("../controllers/notification.controller");
 
 const router = Router();
 
@@ -69,5 +69,7 @@ router.post("/respond", respond);
  *       400: { description: Validation error }
  */
 router.post("/generate-token", authenticate, authorize("hospital"), generateToken);
+
+router.get("/my", authenticate, authorize("donor"), getMyNotifications);
 
 module.exports = router;

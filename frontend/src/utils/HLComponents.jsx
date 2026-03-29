@@ -1,5 +1,6 @@
 // Shared HemoLink UI primitives — used across all pages
 import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export function LogoDrop({ size = 34 }) {
   return (
@@ -140,7 +141,9 @@ export const INPUT_ICON = { position:"absolute", left:13, top:"50%", transform:"
 
 // Shared dashboard shell for Hospital & Donor
 export function DashShell({ nav, user, onLogout, children, logoLabel = "Rwanda", userLabel }) {
-  const path = typeof window !== "undefined" ? window.location.pathname : "";
+  const navigate = useNavigate();
+  const location = useLocation();
+  const path = location.pathname;
   return (
     <div style={{ display:"flex", height:"100vh", overflow:"hidden", fontFamily:"'Sora',sans-serif", background:"#FDF4F2" }}>
       <style>{SORA_FONT + SHARED_BTN_CSS + `
@@ -162,7 +165,7 @@ export function DashShell({ nav, user, onLogout, children, logoLabel = "Rwanda",
         {userLabel && <div style={{ fontSize:11, color:"rgba(255,255,255,.3)", padding:"6px 20px 12px", letterSpacing:.3 }}>{userLabel}</div>}
         <nav style={{ flex:1, display:"flex", flexDirection:"column", padding:"4px 12px", gap:2 }}>
           {nav.map(({ label, path: np, Icon }) => (
-            <button key={np} className={`hl-nav-item${path === np ? " hl-nav-active" : ""}`} onClick={() => window.location.href = np}>
+            <button key={np} className={`hl-nav-item${path === np ? " hl-nav-active" : ""}`} onClick={() => navigate(np)}>
               <Icon size={16} color={path === np ? "#fff" : "rgba(255,255,255,.5)"}/>
               <span>{label}</span>
             </button>

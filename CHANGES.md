@@ -1,75 +1,160 @@
-# HemoLink Rwanda — Enhanced Version
+# HemoLink — Change Log
 
-## Summary of Changes
+## v2.0 — March 2026 (Patch Release)
 
-### Frontend — Complete UI Redesign
+### 🔴 Critical Bug Fixes
 
-**Design System**
-- Font: `Sora` (display/UI) + `Lora` (italic/serif accents) — replaces DM Sans
-- Color palette: Deep blood reds `#C0392B → #8B1A1A`, warm cream `#FDF4F2`
-- All emojis eliminated — replaced with inline SVG icons throughout
-- The **H blood-drop logo** is the only "special" mark — preserved on every page
-- Global CSS animations: `pulse`, `bloodFall`, `floatDrop`, `fadeInUp`, `hl-spin`
+#### Login Persistence Fix (ALL users)
+**Problem:** After logging in, navigating away or refreshing the page would log
+users out. Only the admin portal continued to work.
 
-**New Utility Files**
-- `src/utils/i18n.js` — Full translations: English, French (FR), Kinyarwanda (RW)
-- `src/utils/LangContext.jsx` — React language context with `useLang()` hook
-- `src/utils/LanguageSwitcher.jsx` — Globe-icon dropdown on every page, light/dark variants
-- `src/utils/HLComponents.jsx` — Shared: `LogoDrop`, `AuthLayout`, `DashShell`, input helpers
+**Root Cause:** The donor and hospital API responses do not include a `role`
+field on the user object. When the page reloaded, `AuthContext` restored the
+user from `localStorage`, but `user.role` was `undefined`, causing every
+`ProtectedRoute` to redirect to the login page.
 
-**Pages Rebuilt**
-| Page | Key improvements |
-|------|-----------------|
-| `HomePage` | Animated falling blood drops, floating H-drop hero, blood gap stats, dark CTA |
-| `LoginPage` | Split-panel with blood stats sidebar, SVG eye toggle |
-| `HospitalLoginPage` | Hospital indicator strip, portal branding |
-| `AdminLoginPage` | Dark restricted-access design with shield icon |
-| `DonorRespondPage` | Blood-type hero display, urgency badge, full i18n |
-| `DonorDashboard` | Stat cards, animated availability toggle with glow |
-| `AdminShell` | Dark crimson sidebar, embedded language switcher |
-| `AdminDashboard` | Hover-lift stat cards, national blood gap progress bar |
-| `AdminDonors` | Searchable/filterable table, blood type colour badges |
-| `AdminHospitals` | Approve/revoke hospital cards |
-| `AdminRequests` | Filterable table with urgency + status colour coding |
-| `AdminSmsLog` | Expandable rows, response rate bar, fixed API endpoint |
-| `HospitalShell` | Shared sidebar with language switcher |
-| `HospitalDashboard` | Leaflet map, blood stock cards, recent requests |
-| `HospitalRequests` | Expandable cards showing donor responses inline |
-| `HospitalInventory` | Per-blood-type save, visual stock bars, critical alert |
-| `NewRequest` | Blood type grid selector, urgency radio cards, success state |
+**Fix:** `LoginPage.jsx` and `HospitalLoginPage.jsx` now inject the role before
+calling `login()`:
+```js
+// Before (broken)
+login(res.data.data.donor, res.data.data.token)
 
-**Language Support**
-Every page includes a `<LanguageSwitcher/>` component. Language persists in `localStorage`.
-Translations cover: navigation, all form labels/errors, dashboard labels, donor respond flow.
-
----
-
-### Backend — Bug Fixes
-
-**`notification.controller.js`**
-- **Fixed**: `distance_km` was hardcoded to `null`. Now computes real Haversine distance (km) between donor and hospital GPS coordinates.
-- **Fixed**: Hospital `latitude` + `longitude` added to Prisma `select` in `getByToken()`.
-
-**`AdminSmsLog.jsx`**  
-- **Fixed**: Frontend was calling `/admin/sms` — corrected to `/admin/notifications` (the actual route).
-
----
-
-### How to Run
-
-```bash
-# Backend
-cd backend
-cp .env.example .env   # set DATABASE_URL, JWT_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD_HASH
-npm install
-npx prisma migrate dev
-npm run dev
-
-# Frontend
-cd frontend
-npm install
-npm run dev
+// After (fixed)
+login({ ...res.data.data.donor, role: "donor" }, res.data.data.token)
+login({ ...res.data.data.hospital, role: "hospital" }, res.data.data.token)
 ```
 
-Frontend: http://localhost:5173  
-Backend API: http://localhost:3001/api
+---
+
+### 📱 Real SMS Integration — Africa's Talking
+
+`sms.service.js` now sends real SMS messages via Africa's Talking (the standard
+telecom API used in Rwanda). Set the following in `.env`:
+
+```
+AT_API_KEY=your_key_from_africastalking.com
+AT_USERNAME=your_sandbox_or_live_username
+AT_SENDER_ID=HemoLink
+```
+
+- If `AT_API_KEY` / `AT_USERNAME` are not set, the service falls back to the
+  previous console mock (development mode still works without keys).
+- Phone numbers are auto-normalised to E.164 (`+250XXXXXXXXX`) before sending.
+- Failed deliveries now record `"failed"` in the DB instead of crashing the
+  notification flow.
+
+**To get credentials:** https://africastalking.com — create a free sandbox
+account, test with your number, then switch to live when ready.
+
+---
+
+### 🎨 UI Improvements
+
+#### Hospital Dashboard — Blood Stock First
+- Blood inventory section now appears at the top of the dashboard.
+- Critical / out-of-stock types highlighted with a warning banner.
+- Stats (pending, fulfilled, low stock) moved below inventory.
+- Recent requests and quick-action panel side-by-side.
+
+#### Hospital Dashboard — Donor Heatmap
+- The map now loads available donor positions from `GET /api/donors/locations`.
+- Each donor is shown as a coloured dot labelled with their blood type.
+- A 10 km radius ring is drawn around the hospital marker.
+- A live donor count badge is shown in the corner of the map.
+- If no GPS coordinates are set for the hospital, a friendly placeholder is shown.
+
+#### Donor Dashboard — Full Redesign
+- New header with live availability status indicator (pulsing ring when active).
+- Blood type badge displayed prominently in the top-right.
+- Three stat cards: Availability, SMS Alerts, Donations Accepted.
+- Profile panel redesigned with icon rows.
+- New **Recent Notifications** panel showing the last 5 SMS requests, their
+  hospital name, date/time, and donor response (Accepted / Declined / pending).
+- **Impact card:** shows estimated lives saved (accepted donations × 3).
+- Availability toggle redesigned with animated pulse ring when active.
+
+#### New Backend Endpoint
+`GET /api/notifications/my` — returns the logged-in donor's notification
+history (last 50, newest first). Protected by `authenticate + authorize("donor")`.
+
+---
+
+### 🛠 Developer Notes
+
+- Copy `backend/.env.example` to `backend/.env` and fill in your values.
+- Run `npm install` in `backend/` — no new packages required.
+- Run `npm install` in `frontend/` — no new packages required (Leaflet already present).
+- Leaflet CSS is imported dynamically inside the map component; no extra setup needed.
+
+
+---
+
+## v2.1 — Session 3 Fixes
+
+### 🔧 Backend
+
+#### CORS locked down
+`backend/src/index.js` — CORS now only allows the configured `FRONTEND_URL`
+(and `localhost:5173` / `localhost:3000` in development). Wild-card `*` removed.
+
+#### PORT default corrected
+Default port changed from `5000` → `3001` to match `README.md` and the frontend
+`api.js` hard-coded base URL.
+
+#### Graceful shutdown
+Prisma connection pool is properly disconnected on `SIGINT` / `SIGTERM`.
+Prevents "too many connections" errors when restarting the server in development.
+
+#### Error handler upgraded
+`errorHandler.js` now returns proper JSON for:
+- Prisma unique-constraint violations (`P2002`) → 409
+- Prisma not-found errors (`P2025`) → 404
+- `JsonWebTokenError` / `TokenExpiredError` → 401
+- CORS rejections → 403
+- Generic server errors masked in production mode
+
+#### `createdAt` added to Donor
+New `created_at` column with migration `20260328000000_add_created_at_to_donor`.
+Displayed in the donor dashboard "Member Since" row.
+
+### 🔧 Frontend
+
+#### Redirect loop on login fixed
+`api.js` — the 401 interceptor previously redirected even when the request
+itself was to `/login` or `/register`, creating an infinite loop when a user
+entered wrong credentials. Now the interceptor skips auth routes.
+
+#### API base URL via environment variable
+`api.js` now reads `VITE_API_URL` from the environment (falls back to
+`http://localhost:3001/api`). Copy `frontend/.env.example` to
+`frontend/.env.local` and set `VITE_API_URL` for staging/production.
+
+#### Request timeout
+All API calls now time out after 15 seconds instead of hanging the UI forever.
+
+#### React Router navigation fixed in all shells
+`DashShell`, `HospitalShell`, and `AdminShell` all used `window.location.href`
+and `window.location.pathname` — replaced with `useNavigate` and `useLocation`
+so navigating between pages no longer causes full page reloads.
+
+#### Hospital heatmap upgraded
+The donor map now uses `leaflet.heat` (already in `package.json`) to render a
+proper density heatmap behind the individual donor markers. A blood-type
+breakdown mini-panel shows how many donors of each type are nearby, with
+proportional bars. A heatmap density legend is shown in the bottom-right corner.
+
+#### Filename case bug fixed
+`Hospitalregisterpage.jsx` renamed to `HospitalRegisterPage.jsx` to match the
+import in `main.jsx`. The mismatch was harmless on macOS (case-insensitive FS)
+but would crash on Linux servers.
+
+#### `AuthContext` improved
+Added `refreshUser()` helper for future profile-update flows. Added a dev-time
+error if `useAuth()` is called outside `AuthProvider`.
+
+### 📁 New Files
+| File | Purpose |
+|------|---------|
+| `backend/.env.example` | Documents all required env vars including `AT_API_KEY` |
+| `frontend/.env.example` | Documents `VITE_API_URL` for deployment |
+| `backend/prisma/migrations/20260328000000_add_created_at_to_donor/` | Adds `created_at` to donors table |

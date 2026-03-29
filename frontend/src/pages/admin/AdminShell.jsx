@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../utils/AuthContext.jsx";
 import LanguageSwitcher from "../../utils/LanguageSwitcher.jsx";
 import { LogoDrop, SORA_FONT, SHARED_BTN_CSS } from "../../utils/HLComponents.jsx";
@@ -20,7 +20,8 @@ const NAV = [
 export default function AdminShell({ children, title, subtitle }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const path = window.location.pathname;
+  const location = useLocation();
+  const path = location.pathname;
 
   const handleLogout = () => { logout(); navigate("/admin/login"); };
 

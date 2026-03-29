@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../utils/AuthContext.jsx";
 import LanguageSwitcher from "../../utils/LanguageSwitcher.jsx";
 import { LogoDrop, SORA_FONT, SHARED_BTN_CSS } from "../../utils/HLComponents.jsx";
+import { useLocation } from "react-router-dom";
 
 const NAV = [
   { label:"Dashboard", path:"/hospital/dashboard",
@@ -16,7 +17,8 @@ const NAV = [
 export default function HospitalShell({ children, title, subtitle, action }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const path = window.location.pathname;
+  const location = useLocation();
+  const path = location.pathname;
 
   return (
     <div style={{ display:"flex", height:"100vh", overflow:"hidden", fontFamily:"'Sora',sans-serif", background:"#FDF4F2" }}>

@@ -86,7 +86,7 @@ export default function LoginPage() {
     setServerError("");
     try {
       const res = await api.post("/donors/login", { phone: form.phone.replace(/[\s\-]/g,""), password: form.password });
-      login(res.data.data.donor, res.data.data.token);
+      login({ ...res.data.data.donor, role: "donor" }, res.data.data.token);
       navigate("/donor/dashboard");
     } catch (err) {
       setServerError(err.response?.data?.message || "Login failed. Please try again.");

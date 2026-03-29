@@ -4,48 +4,94 @@ import { useAuth } from "../../utils/AuthContext.jsx";
 import { useLang } from "../../utils/LangContext.jsx";
 import LanguageSwitcher from "../../utils/LanguageSwitcher.jsx";
 import api from "../../utils/api.js";
-import { DashShell, LogoDrop, SORA_FONT, SHARED_BTN_CSS } from "../../utils/HLComponents.jsx";
-import { IconBlood, IconBell, IconUser, IconPhone, IconCheckCircle } from "../../utils/Icons.jsx";
+import { DashShell, SORA_FONT, SHARED_BTN_CSS } from "../../utils/HLComponents.jsx";
+import {
+  IconBlood, IconBell, IconUser, IconPhone, IconCheckCircle,
+  IconCalendar, IconPin, IconHeartbeat, IconPower, IconMessage,
+} from "../../utils/Icons.jsx";
 
-const IconHeartbeat = ({ size=20, color="#C0392B" }) => (
-  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-    <path d="M1 10h3l2-5 4 10 2-5 2 3h3" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-const IconPin = ({ size=16, color="currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-    <path d="M8 1a5 5 0 0 1 5 5c0 4-5 9-5 9S3 10 3 6a5 5 0 0 1 5-5z" stroke={color} strokeWidth="1.3"/>
-    <circle cx="8" cy="6" r="1.5" stroke={color} strokeWidth="1.3"/>
-  </svg>
-);
-const IconCalendar = ({ size=16, color="currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-    <rect x="1" y="3" width="14" height="12" rx="1.5" stroke={color} strokeWidth="1.3"/>
-    <path d="M5 1v4M11 1v4M1 7h14" stroke={color} strokeWidth="1.3" strokeLinecap="round"/>
-  </svg>
-);
-const IconPower = ({ size=20, color="currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-    <path d="M10 3v5M7 5.27A6 6 0 1 0 13 5.27" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
-  </svg>
-);
+const BLOOD_COLORS = {
+  "O+":"#C0392B","O-":"#922B21","A+":"#E67E22","A-":"#B7560F",
+  "B+":"#2E86C1","B-":"#1A5276","AB+":"#8E44AD","AB-":"#6C3483",
+};
 
 const NAV = [
-  { label:"Dashboard", path:"/donor/dashboard", Icon: ({ size, color }) => <svg width={size} height={size} viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/></svg> },
+  { label:"Dashboard", path:"/donor/dashboard",
+    Icon:({size,color})=><svg width={size} height={size} viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/></svg> },
 ];
 
+function StatCard({ label, value, icon, color, bg, sub }) {
+  return (
+    <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:20,
+      padding:"22px 24px", display:"flex", alignItems:"center", gap:16,
+      boxShadow:"0 4px 16px rgba(140,20,20,.05)", transition:"transform .2s" }}
+      onMouseEnter={e=>{ e.currentTarget.style.transform="translateY(-2px)"; }}
+      onMouseLeave={e=>{ e.currentTarget.style.transform="translateY(0)"; }}>
+      <div style={{ width:52, height:52, borderRadius:16, background:bg,
+        display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        {icon}
+      </div>
+      <div>
+        <div style={{ fontSize:11, fontWeight:700, color:"#9B7B77", textTransform:"uppercase",
+          letterSpacing:.8, marginBottom:5 }}>{label}</div>
+        <div style={{ fontSize:24, fontWeight:900, color, lineHeight:1 }}>{value}</div>
+        {sub && <div style={{ fontSize:11, color:"#BBA0A0", marginTop:4 }}>{sub}</div>}
+      </div>
+    </div>
+  );
+}
+
+function NotificationItem({ notif }) {
+  const statusColors = {
+    Accepted: { bg:"rgba(30,132,73,.1)", c:"#1E8449" },
+    Declined: { bg:"rgba(192,57,43,.1)", c:"#C0392B" },
+    pending:  { bg:"rgba(230,126,34,.1)", c:"#B7560F" },
+  };
+  const sc = statusColors[notif.responseStatus] || statusColors.pending;
+  const reqBlood = notif.bloodRequest?.bloodTypeCode || "—";
+  const bc = BLOOD_COLORS[reqBlood] || "#C0392B";
+  const hospital = notif.bloodRequest?.hospital?.name || "Hospital";
+
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 16px",
+      background:"rgba(253,244,242,.6)", borderRadius:14, border:"1px solid #F8EDEB" }}>
+      <div style={{ width:44, height:44, borderRadius:14, background:`${bc}14`,
+        display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        <span style={{ fontSize:17, fontWeight:900, color:bc, fontFamily:"'Lora',serif" }}>{reqBlood}</span>
+      </div>
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:13, fontWeight:700, color:"#1a0a07" }}>{hospital}</div>
+        <div style={{ fontSize:11, color:"#9B7B77", marginTop:2 }}>
+          {notif.sentAt ? new Date(notif.sentAt).toLocaleString("en-RW", { dateStyle:"medium", timeStyle:"short" }) : "—"}
+        </div>
+      </div>
+      <span style={{ fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:20,
+        background:sc.bg, color:sc.c, whiteSpace:"nowrap" }}>
+        {notif.responseStatus || "pending"}
+      </span>
+    </div>
+  );
+}
+
 export default function DonorDashboard() {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
   const { logout } = useAuth();
-  const { t } = useLang();
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [toggling, setToggling] = useState(false);
-  const [error, setError] = useState("");
+  const { t }     = useLang();
+  const [profile, setProfile]   = useState(null);
+  const [notifs,  setNotifs]    = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [toggling,setToggling]  = useState(false);
+  const [error,   setError]     = useState("");
 
   useEffect(() => {
-    api.get("/donors/profile")
-      .then(res => setProfile(res.data.data))
+    Promise.all([
+      api.get("/donors/profile"),
+      api.get("/notifications/my").catch(() => ({ data:{ data:[] } })),
+    ])
+      .then(([pr, nr]) => {
+        setProfile(pr.data.data);
+        setNotifs(nr.data.data || []);
+      })
       .catch(() => setError("Failed to load profile."))
       .finally(() => setLoading(false));
   }, []);
@@ -57,21 +103,27 @@ export default function DonorDashboard() {
       const res = await api.put("/donors/availability", { available: !profile.available });
       setProfile(res.data.data);
     } catch { setError("Failed to update."); }
-    finally { setToggling(false); }
+    finally  { setToggling(false); }
   };
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#FDF4F2", fontFamily:"'Sora',sans-serif" }}>
+    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center",
+      background:"#FDF4F2", fontFamily:"'Sora',sans-serif" }}>
       <style>{SORA_FONT + SHARED_BTN_CSS}</style>
       <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:16 }}>
-        <div style={{ width:38, height:38, border:"3px solid #F0E0DC", borderTopColor:"#C0392B", borderRadius:"50%", animation:"hl-spin .75s linear infinite" }}/>
-        <span style={{ fontSize:13, color:"#9B7B77" }}>Loading…</span>
+        <div style={{ width:40, height:40, border:"3px solid #F0E0DC", borderTopColor:"#C0392B",
+          borderRadius:"50%", animation:"hl-spin .75s linear infinite" }}/>
+        <span style={{ fontSize:13, color:"#9B7B77" }}>Loading your dashboard…</span>
       </div>
     </div>
   );
 
-  const firstName = profile?.fullName?.split(" ")[0] || "Donor";
-  const isAvailable = profile?.available;
+  const firstName  = profile?.fullName?.split(" ")[0] || "Donor";
+  const isAvail    = profile?.available;
+  const btype      = profile?.bloodTypeCode || "—";
+  const btypeColor = BLOOD_COLORS[btype] || "#C0392B";
+  const acceptedCount = notifs.filter(n => n.responseStatus === "Accepted").length;
+  const recentNotifs  = [...notifs].sort((a,b) => b.notificationId - a.notificationId).slice(0, 5);
 
   return (
     <DashShell
@@ -80,135 +132,260 @@ export default function DonorDashboard() {
       logoLabel="Rwanda"
       userLabel={profile?.fullName?.toUpperCase()}
     >
-      <style>{SORA_FONT + SHARED_BTN_CSS}</style>
-      <div style={{ padding:"36px 44px", maxWidth:1100, margin:"0 auto" }}>
+      <style>{SORA_FONT + SHARED_BTN_CSS + `
+        @keyframes pulse-ring {
+          0%   { transform: scale(1);   opacity:.7; }
+          70%  { transform: scale(1.5); opacity:0; }
+          100% { transform: scale(1.5); opacity:0; }
+        }
+      `}</style>
 
-        {/* Header row */}
-        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:36 }}>
+      <div style={{ padding:"36px 44px", maxWidth:1200, margin:"0 auto" }}>
+
+        {/* ── HEADER ── */}
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:32 }}>
           <div>
             <p style={{ fontSize:13, color:"#9B7B77", fontWeight:500, marginBottom:6, letterSpacing:.3 }}>
-              {t("donor.welcomeBack")}
+              Welcome back,
             </p>
-            <h1 style={{ fontSize:34, fontWeight:800, color:"#1a0a07", letterSpacing:-.8, lineHeight:1 }}>{firstName}</h1>
-            <p style={{ fontSize:14, color:"#7A4A45", marginTop:6 }}>{t("donor.overview")}</p>
+            <h1 style={{ fontSize:36, fontWeight:900, color:"#1a0a07", letterSpacing:-1, lineHeight:1 }}>
+              {firstName}
+            </h1>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:10 }}>
+              <div style={{ width:10, height:10, borderRadius:"50%",
+                background: isAvail ? "#1E8449" : "#9B7B77",
+                boxShadow: isAvail ? "0 0 0 3px rgba(30,132,73,.2)" : "none" }}/>
+              <span style={{ fontSize:13, color: isAvail ? "#1E8449" : "#9B7B77", fontWeight:600 }}>
+                {isAvail ? "Active — you are visible to hospitals" : "Inactive — you are hidden from searches"}
+              </span>
+            </div>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <LanguageSwitcher/>
+            {/* Blood type badge */}
+            <div style={{ padding:"10px 18px", background:`${btypeColor}12`,
+              border:`2px solid ${btypeColor}33`, borderRadius:14, textAlign:"center" }}>
+              <div style={{ fontSize:9, fontWeight:700, color:btypeColor, textTransform:"uppercase",
+                letterSpacing:1, marginBottom:2 }}>Blood Type</div>
+              <div style={{ fontSize:22, fontWeight:900, color:btypeColor, fontFamily:"'Lora',serif",
+                lineHeight:1 }}>{btype}</div>
+            </div>
           </div>
         </div>
 
         {error && (
-          <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:24, fontWeight:500 }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#C0392B" strokeWidth="1.4"/><path d="M8 5v3M8 10.5v.5" stroke="#C0392B" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff2f2",
+            border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10,
+            padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:24, fontWeight:500 }}>
             {error}
           </div>
         )}
 
-        {/* Stat cards */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:18, marginBottom:28 }}>
-          {[
-            { label:t("donor.bloodType"), value:profile?.bloodTypeCode || "—", Icon:IconBlood, color:"#C0392B", bg:"rgba(192,57,43,.08)" },
-            { label:t("donor.status"), value:isAvailable ? t("donor.active") : t("donor.inactive"), Icon:IconHeartbeat, color:isAvailable?"#1E8449":"#6B6B6B", bg:isAvailable?"rgba(30,132,73,.08)":"rgba(107,107,107,.08)" },
-            { label:t("donor.smsAlerts"), value:profile?.consentSms ? t("donor.enabled") : t("donor.disabled"), Icon:IconBell, color:"#6B3FA0", bg:"rgba(107,63,160,.08)" },
-          ].map(({ label, value, Icon, color, bg }) => (
-            <div key={label} style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:18, padding:"24px", display:"flex", alignItems:"center", gap:16, boxShadow:"0 4px 16px rgba(140,20,20,.05)", transition:"transform .2s" }}>
-              <div style={{ width:50, height:50, borderRadius:14, background:bg, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                <Icon size={22} color={color}/>
-              </div>
-              <div>
-                <div style={{ fontSize:11, fontWeight:700, color:"#9B7B77", textTransform:"uppercase", letterSpacing:.8, marginBottom:5 }}>{label}</div>
-                <div style={{ fontSize:22, fontWeight:800, color }}>{value}</div>
-              </div>
-            </div>
-          ))}
+        {/* ── STAT CARDS ── */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16, marginBottom:28 }}>
+          <StatCard
+            label="Availability Status"
+            value={isAvail ? "Active" : "Inactive"}
+            color={isAvail ? "#1E8449" : "#6B6B6B"}
+            bg={isAvail ? "rgba(30,132,73,.1)" : "rgba(107,107,107,.08)"}
+            sub={isAvail ? "Hospitals can find you" : "Toggle to become active"}
+            icon={<IconHeartbeat size={24} color={isAvail ? "#1E8449" : "#6B6B6B"}/>}
+          />
+          <StatCard
+            label="SMS Alerts"
+            value={profile?.consentSms ? "Enabled" : "Disabled"}
+            color="#6B3FA0"
+            bg="rgba(107,63,160,.08)"
+            sub={profile?.consentSms ? "Receiving notifications" : "Not receiving alerts"}
+            icon={<IconBell size={24} color="#6B3FA0"/>}
+          />
+          <StatCard
+            label="Donations Accepted"
+            value={acceptedCount}
+            color="#C0392B"
+            bg="rgba(192,57,43,.08)"
+            sub={`out of ${notifs.length} request${notifs.length !== 1 ? "s" : ""} received`}
+            icon={<IconCheckCircle size={24} color="#C0392B"/>}
+          />
         </div>
 
-        {/* Main content grid */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 340px", gap:24 }}>
-          {/* Left: Profile */}
-          <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:20, padding:"32px", boxShadow:"0 4px 20px rgba(140,20,20,.05)" }}>
-            <h2 style={{ fontSize:18, fontWeight:800, color:"#1a0a07", marginBottom:24, letterSpacing:-.3 }}>{t("donor.profileTitle")}</h2>
-            {[
-              { label:t("donor.fullName"), value:profile?.fullName, Icon:IconUser },
-              { label:t("donor.phone"), value:profile?.phone, Icon:IconPhone },
-              { label:t("donor.bloodType"), value:profile?.bloodTypeCode, Icon:IconBlood },
-              { label:t("donor.district"), value:profile?.districtCode, Icon:IconPin },
-              { label:t("donor.registered"), value:profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString("en-RW", { dateStyle:"medium" }) : "—", Icon:IconCalendar },
-            ].map(({ label, value, Icon }, i, arr) => (
-              <div key={label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"15px 0", borderBottom: i < arr.length-1 ? "1px solid #F8EDEB" : "none" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                  <div style={{ width:36, height:36, borderRadius:10, background:"rgba(192,57,43,.06)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                    <Icon size={16} color="#C0392B"/>
-                  </div>
-                  <span style={{ fontSize:13, color:"#7A4A45" }}>{label}</span>
+        {/* ── MAIN GRID ── */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 360px", gap:24 }}>
+
+          {/* LEFT column */}
+          <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+
+            {/* Profile card */}
+            <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:22,
+              padding:"28px 32px", boxShadow:"0 4px 20px rgba(140,20,20,.05)" }}>
+              <h2 style={{ fontSize:17, fontWeight:800, color:"#1a0a07", marginBottom:22,
+                letterSpacing:-.2, display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ width:32, height:32, borderRadius:10, background:"rgba(192,57,43,.08)",
+                  display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <IconUser size={16} color="#C0392B"/>
                 </div>
-                <span style={{ fontSize:14, fontWeight:600, color:"#1a0a07" }}>{value || "—"}</span>
+                Your Profile
+              </h2>
+              <div style={{ display:"flex", flexDirection:"column" }}>
+                {[
+                  { label:"Full Name",    value:profile?.fullName, Icon:IconUser },
+                  { label:"Phone",        value:profile?.phone,    Icon:IconPhone },
+                  { label:"Blood Type",   value:profile?.bloodTypeCode, Icon:IconBlood },
+                  { label:"Location",     value:profile?.districtCode || "Not set", Icon:IconPin },
+                  { label:"Member Since", value:profile?.createdAt
+                    ? new Date(profile.createdAt).toLocaleDateString("en-RW", { dateStyle:"medium" })
+                    : "—", Icon:IconCalendar },
+                ].map(({ label, value, Icon }, i, arr) => (
+                  <div key={label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                    padding:"14px 0", borderBottom: i < arr.length-1 ? "1px solid #F8EDEB" : "none" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                      <div style={{ width:34, height:34, borderRadius:10, background:"rgba(192,57,43,.06)",
+                        display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        <Icon size={15} color="#C0392B"/>
+                      </div>
+                      <span style={{ fontSize:13, color:"#7A4A45" }}>{label}</span>
+                    </div>
+                    <span style={{ fontSize:14, fontWeight:700, color:"#1a0a07" }}>{value || "—"}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* SMS Notification history */}
+            <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:22,
+              padding:"28px 32px", boxShadow:"0 4px 20px rgba(140,20,20,.05)" }}>
+              <h2 style={{ fontSize:17, fontWeight:800, color:"#1a0a07", marginBottom:22,
+                letterSpacing:-.2, display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ width:32, height:32, borderRadius:10, background:"rgba(192,57,43,.08)",
+                  display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <IconMessage size={16} color="#C0392B"/>
+                </div>
+                Recent Notifications
+              </h2>
+              {recentNotifs.length === 0 ? (
+                <div style={{ textAlign:"center", padding:"32px 20px", color:"#9B7B77", fontSize:13,
+                  background:"rgba(192,57,43,.02)", borderRadius:14, border:"1px dashed #F0E0DC" }}>
+                  <IconBell size={28} color="#E8D5D0"/>
+                  <p style={{ marginTop:10 }}>No notifications yet.</p>
+                  <p style={{ fontSize:11, marginTop:4, color:"#BBA0A0" }}>
+                    When hospitals need your blood type, you will receive an SMS here.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {recentNotifs.map(n => <NotificationItem key={n.notificationId} notif={n}/>)}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Right: Availability card */}
-          <div>
+          {/* RIGHT column */}
+          <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
+
+            {/* Availability toggle */}
             <div style={{
               background:"#fff",
-              border:`2.5px solid ${isAvailable ? "#1E8449" : "#E8D5D0"}`,
-              borderTop:`5px solid ${isAvailable ? "#1E8449" : "#C0392B"}`,
-              borderRadius:20, padding:"36px 28px",
-              boxShadow:`0 8px 32px ${isAvailable ? "rgba(30,132,73,.12)" : "rgba(140,20,20,.08)"}`,
-              display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:20
+              border:`2px solid ${isAvail ? "#1E8449" : "#E8D5D0"}`,
+              borderTop:`4px solid ${isAvail ? "#1E8449" : "#C0392B"}`,
+              borderRadius:22, padding:"32px 26px",
+              boxShadow:`0 8px 32px ${isAvail ? "rgba(30,132,73,.1)" : "rgba(140,20,20,.06)"}`,
+              display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:18,
             }}>
-              {/* Big status icon */}
-              <div style={{ width:80, height:80, borderRadius:"50%", background:isAvailable?"rgba(30,132,73,.1)":"rgba(192,57,43,.08)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <IconPower size={36} color={isAvailable?"#1E8449":"#C0392B"}/>
+              {/* Status indicator */}
+              <div style={{ position:"relative", width:80, height:80 }}>
+                {isAvail && (
+                  <div style={{ position:"absolute", inset:0, borderRadius:"50%",
+                    background:"rgba(30,132,73,.2)", animation:"pulse-ring 2s ease-out infinite" }}/>
+                )}
+                <div style={{ width:80, height:80, borderRadius:"50%",
+                  background: isAvail ? "rgba(30,132,73,.1)" : "rgba(192,57,43,.06)",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  border:`2px solid ${isAvail ? "rgba(30,132,73,.3)" : "rgba(192,57,43,.15)"}` }}>
+                  <IconPower size={34} color={isAvail ? "#1E8449" : "#C0392B"}/>
+                </div>
               </div>
 
               <div>
-                <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:isAvailable?"#1E8449":"#C0392B", marginBottom:8 }}>
-                  {isAvailable ? "● ACTIVE" : "○ INACTIVE"}
+                <div style={{ fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5,
+                  color: isAvail ? "#1E8449" : "#C0392B", marginBottom:8 }}>
+                  {isAvail ? "● ACTIVE" : "○ INACTIVE"}
                 </div>
-                <h3 style={{ fontSize:18, fontWeight:800, color:"#1a0a07", marginBottom:10 }}>{t("donor.availableTitle")}</h3>
-                <p style={{ fontSize:13.5, color:"#7A4A45", lineHeight:1.65 }}>{t("donor.availableDesc")}</p>
+                <h3 style={{ fontSize:17, fontWeight:800, color:"#1a0a07", marginBottom:8 }}>
+                  {isAvail ? "You Are Available" : "You Are Unavailable"}
+                </h3>
+                <p style={{ fontSize:12.5, color:"#7A4A45", lineHeight:1.65 }}>
+                  {isAvail
+                    ? "Hospitals can find you when they need your blood type. You will receive SMS alerts."
+                    : "Toggle on to be discoverable by hospitals needing blood donations in your area."}
+                </p>
               </div>
 
               <button
                 onClick={toggleAvailability}
                 disabled={toggling}
                 style={{
-                  width:"100%", padding:"14px", borderRadius:12, fontSize:14, fontWeight:700, cursor:toggling?"not-allowed":"pointer",
-                  fontFamily:"'Sora',sans-serif", transition:"all .2s", opacity:toggling?.65:1,
-                  background: isAvailable ? "transparent" : "linear-gradient(135deg,#1E8449,#145A32)",
-                  color: isAvailable ? "#C0392B" : "#fff",
-                  border: isAvailable ? "2px solid #C0392B" : "none",
-                  boxShadow: isAvailable ? "none" : "0 6px 20px rgba(30,132,73,.35)",
+                  width:"100%", padding:"14px", borderRadius:13, fontSize:14, fontWeight:800,
+                  cursor:toggling ? "not-allowed" : "pointer", fontFamily:"'Sora',sans-serif",
+                  transition:"all .2s", opacity:toggling ? .65 : 1, letterSpacing:.2,
+                  background: isAvail
+                    ? "transparent"
+                    : "linear-gradient(135deg,#1E8449,#145A32)",
+                  color: isAvail ? "#C0392B" : "#fff",
+                  border: isAvail ? "2px solid #C0392B" : "none",
+                  boxShadow: isAvail ? "none" : "0 6px 20px rgba(30,132,73,.35)",
                 }}
               >
-                {toggling ? t("donor.updating") : isAvailable ? t("donor.makeUnavailable") : t("donor.makeAvailable")}
+                {toggling ? "Updating…" : isAvail ? "Mark Unavailable" : "Mark Available"}
               </button>
 
-              {isAvailable && (
-                <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 14px", background:"rgba(30,132,73,.06)", borderRadius:10, width:"100%" }}>
+              {isAvail && (
+                <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 14px",
+                  background:"rgba(30,132,73,.06)", borderRadius:10, width:"100%" }}>
                   <IconCheckCircle size={14} color="#1E8449"/>
-                  <span style={{ fontSize:12, color:"#1E8449", fontWeight:500 }}>You are receiving SMS alerts</span>
+                  <span style={{ fontSize:11, color:"#1E8449", fontWeight:600 }}>
+                    SMS alerts are active
+                  </span>
                 </div>
               )}
             </div>
 
-            {/* How it works mini */}
-            <div style={{ marginTop:18, background:"rgba(192,57,43,.04)", border:"1px solid rgba(192,57,43,.1)", borderRadius:16, padding:"20px 22px" }}>
-              <h4 style={{ fontSize:13, fontWeight:700, color:"#1a0a07", marginBottom:14, letterSpacing:-.1 }}>How donations work</h4>
+            {/* How it works */}
+            <div style={{ background:"rgba(192,57,43,.03)", border:"1px solid rgba(192,57,43,.1)",
+              borderRadius:18, padding:"22px 24px" }}>
+              <h4 style={{ fontSize:13, fontWeight:800, color:"#1a0a07", marginBottom:16, letterSpacing:-.1 }}>
+                How it works
+              </h4>
               {[
-                "Hospital requests blood via HemoLink",
-                "System finds nearby matching donors",
-                "You receive SMS with a respond link",
-                "Accept → go to hospital & save a life",
-              ].map((step, i) => (
-                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10, marginBottom: i<3 ? 10 : 0 }}>
-                  <div style={{ width:20, height:20, borderRadius:6, background:"rgba(192,57,43,.12)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1 }}>
-                    <span style={{ fontSize:10, fontWeight:800, color:"#C0392B" }}>{i+1}</span>
+                { step:1, text:"A hospital submits a blood request via HemoLink" },
+                { step:2, text:"The system finds nearby donors who match the blood type" },
+                { step:3, text:"You receive an SMS with a unique link to respond" },
+                { step:4, text:"Accept the request, go to the hospital, and save a life" },
+              ].map(({ step, text }) => (
+                <div key={step} style={{ display:"flex", alignItems:"flex-start", gap:12,
+                  marginBottom: step < 4 ? 12 : 0 }}>
+                  <div style={{ width:24, height:24, borderRadius:8, background:"rgba(192,57,43,.12)",
+                    display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1 }}>
+                    <span style={{ fontSize:11, fontWeight:900, color:"#C0392B" }}>{step}</span>
                   </div>
-                  <span style={{ fontSize:12.5, color:"#7A4A45", lineHeight:1.55 }}>{step}</span>
+                  <span style={{ fontSize:12, color:"#7A4A45", lineHeight:1.6 }}>{text}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Impact */}
+            <div style={{ background:"linear-gradient(135deg,#C0392B,#8B1A1A)", borderRadius:18,
+              padding:"22px 24px", color:"#fff" }}>
+              <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1,
+                color:"rgba(255,255,255,.6)", marginBottom:12 }}>Your Impact</div>
+              <div style={{ fontSize:36, fontWeight:900, fontFamily:"'Lora',serif", letterSpacing:-1 }}>
+                {acceptedCount * 3}
+              </div>
+              <div style={{ fontSize:13, color:"rgba(255,255,255,.75)", marginTop:4 }}>
+                potential lives saved
+              </div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,.45)", marginTop:6 }}>
+                Each donation can save up to 3 lives
+              </div>
             </div>
           </div>
         </div>
