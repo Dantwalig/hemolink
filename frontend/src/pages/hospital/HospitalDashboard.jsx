@@ -267,7 +267,108 @@ export default function HospitalDashboard() {
         </div>
       ) : (
         <>
-          {/* 1. BLOOD STOCK FIRST */}
+          {/* 1. STATS — pending requests prominent at top */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:24 }}>
+            {[
+              { label:"Pending Requests", value:pending,          color:"#E67E22", urgent: pending > 0 },
+              { label:"Fulfilled",        value:fulfilled,        color:"#1E8449" },
+              { label:"Total Requests",   value:requests.length,  color:"#2E86C1" },
+              { label:"Low/Out of Stock", value:lowStock,         color:lowStock>0?"#C0392B":"#1E8449", urgent: lowStock > 0 },
+            ].map(({ label, value, color, urgent }) => (
+              <div key={label} style={{
+                background:"#fff",
+                border:`1.5px solid ${urgent ? `${color}44` : "#F0E0DC"}`,
+                borderTop:`3px solid ${urgent ? color : "#F0E0DC"}`,
+                borderRadius:18, padding:"20px",
+                boxShadow: urgent ? `0 4px 18px ${color}18` : "0 4px 12px rgba(140,20,20,.04)",
+              }}>
+                {urgent && (
+                  <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:6 }}>
+                    <span style={{ width:7, height:7, borderRadius:"50%", background:color, display:"inline-block",
+                      animation:"hl-pulse 1.4s infinite" }}/>
+                    <span style={{ fontSize:9, fontWeight:700, color, textTransform:"uppercase", letterSpacing:.8 }}>
+                      Action needed
+                    </span>
+                  </div>
+                )}
+                <div style={{ fontSize:34, fontWeight:900, color, fontFamily:"Lora,serif", letterSpacing:-1 }}>{value}</div>
+                <div style={{ fontSize:12, color:"#9B7B77", fontWeight:500, marginTop:6 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* 2. RECENT REQUESTS — full width */}
+          <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:20, padding:"24px 28px", marginBottom:24, boxShadow:"0 4px 12px rgba(140,20,20,.04)" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
+              <div>
+                <h2 style={{ fontSize:17, fontWeight:800, color:"#1a0a07" }}>Recent Requests</h2>
+                {pending > 0 && (
+                  <p style={{ fontSize:12, color:"#E67E22", fontWeight:600, marginTop:4 }}>
+                    {pending} pending — awaiting donor matching
+                  </p>
+                )}
+              </div>
+              <button onClick={() => navigate("/hospital/requests")}
+                style={{ background:"none", border:"none", color:"#C0392B", fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"Sora,sans-serif" }}>
+                View all →
+              </button>
+            </div>
+            {recent.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"40px 20px", color:"#9B7B77", fontSize:13 }}>No requests yet.</div>
+            ) : (
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+                {recent.map(r => {
+                  const bc = BLOOD_COLORS[r.bloodTypeCode] || "#C0392B";
+                  const ss = STATUS_S[r.statusCode] || { bg:"rgba(107,107,107,.1)", c:"#6B6B6B" };
+                  const uc = URGENCY_COLOR[r.urgencyLevel?.toLowerCase()] || "#C0392B";
+                  const isPending = r.statusCode === "pending";
+                  return (
+                    <div key={r.requestId} style={{
+                      display:"flex", alignItems:"center", gap:12, padding:"14px 16px",
+                      background: isPending ? "rgba(255,248,240,.9)" : "rgba(253,244,242,.7)",
+                      borderRadius:14,
+                      border: isPending ? `1.5px solid ${uc}33` : "1px solid #F8EDEB",
+                      borderLeft: isPending ? `3px solid ${uc}` : "1px solid #F8EDEB",
+                    }}>
+                      <div style={{ width:44, height:44, borderRadius:12, background:`${bc}15`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                        <span style={{ fontSize:16, fontWeight:900, color:bc, fontFamily:"Lora,serif" }}>{r.bloodTypeCode}</span>
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:"#1a0a07" }}>{r.unitsNeeded} unit{r.unitsNeeded>1?"s":""}</div>
+                        <div style={{ fontSize:11, color:"#9B7B77", marginTop:2 }}>{r.neededBy ? new Date(r.neededBy).toLocaleDateString("en-RW") : "—"}</div>
+                      </div>
+                      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+                        <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20, background:ss.bg, color:ss.c }}>{r.statusCode}</span>
+                        <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20, background:`${uc}14`, color:uc, textTransform:"capitalize" }}>{r.urgencyLevel}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 3. DONOR HEATMAP */}
+          <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:20, padding:"24px 28px", marginBottom:24, boxShadow:"0 4px 12px rgba(140,20,20,.04)" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18 }}>
+              <div>
+                <h2 style={{ fontSize:17, fontWeight:800, color:"#1a0a07" }}>Nearby Available Donors</h2>
+                <p style={{ fontSize:12, color:"#9B7B77", marginTop:4 }}>Live map — 10 km radius</p>
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ fontSize:10, fontWeight:700, color:"#C0392B", background:"rgba(192,57,43,.08)", padding:"5px 12px", borderRadius:20 }}>● LIVE</span>
+                <button onClick={()=>navigate("/hospital/donors-map")}
+                  style={{ padding:"6px 14px", background:"linear-gradient(135deg,#C0392B,#8B1A1A)", color:"#fff",
+                    border:"none", borderRadius:8, fontSize:11, fontWeight:700, cursor:"pointer",
+                    fontFamily:"'Sora',sans-serif" }}>
+                  Full Map →
+                </button>
+              </div>
+            </div>
+            <DonorHeatmap hospitalLat={user?.latitude} hospitalLng={user?.longitude} hospitalName={user?.name || "Your Hospital"}/>
+          </div>
+
+          {/* 4. BLOOD INVENTORY */}
           <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:20, padding:"24px 28px", marginBottom:24, boxShadow:"0 4px 16px rgba(140,20,20,.05)" }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
               <div>
@@ -295,104 +396,34 @@ export default function HospitalDashboard() {
             )}
           </div>
 
-          {/* 2. STATS */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:24 }}>
-            {[
-              { label:"Pending Requests", value:pending, color:"#E67E22" },
-              { label:"Fulfilled",        value:fulfilled, color:"#1E8449" },
-              { label:"Total Requests",   value:requests.length, color:"#2E86C1" },
-              { label:"Low/Out of Stock", value:lowStock, color:lowStock>0?"#C0392B":"#1E8449" },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:18, padding:"20px", boxShadow:"0 4px 12px rgba(140,20,20,.04)" }}>
-                <div style={{ fontSize:34, fontWeight:900, color, fontFamily:"Lora,serif", letterSpacing:-1 }}>{value}</div>
-                <div style={{ fontSize:12, color:"#9B7B77", fontWeight:500, marginTop:6 }}>{label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* 3. RECENT REQUESTS + QUICK ACTIONS */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22, marginBottom:24 }}>
-            <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:20, padding:"24px 26px", boxShadow:"0 4px 12px rgba(140,20,20,.04)" }}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
-                <h2 style={{ fontSize:17, fontWeight:800, color:"#1a0a07" }}>Recent Requests</h2>
-                <button onClick={() => navigate("/hospital/requests")} style={{ background:"none", border:"none", color:"#C0392B", fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"Sora,sans-serif" }}>View all →</button>
-              </div>
-              {recent.length === 0 ? (
-                <div style={{ textAlign:"center", padding:"40px 20px", color:"#9B7B77", fontSize:13 }}>No requests yet.</div>
-              ) : (
-                <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
-                  {recent.map(r => {
-                    const bc = BLOOD_COLORS[r.bloodTypeCode] || "#C0392B";
-                    const ss = STATUS_S[r.statusCode] || { bg:"rgba(107,107,107,.1)", c:"#6B6B6B" };
-                    const uc = URGENCY_COLOR[r.urgencyLevel?.toLowerCase()] || "#C0392B";
-                    return (
-                      <div key={r.requestId} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 14px", background:"rgba(253,244,242,.7)", borderRadius:12, border:"1px solid #F8EDEB" }}>
-                        <div style={{ width:42, height:42, borderRadius:12, background:`${bc}15`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                          <span style={{ fontSize:15, fontWeight:900, color:bc, fontFamily:"Lora,serif" }}>{r.bloodTypeCode}</span>
-                        </div>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:13, fontWeight:700, color:"#1a0a07" }}>{r.unitsNeeded} unit{r.unitsNeeded>1?"s":""}</div>
-                          <div style={{ fontSize:11, color:"#9B7B77", marginTop:2 }}>{r.neededBy ? new Date(r.neededBy).toLocaleDateString("en-RW") : "—"}</div>
-                        </div>
-                        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
-                          <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20, background:ss.bg, color:ss.c }}>{r.statusCode}</span>
-                          <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20, background:`${uc}14`, color:uc, textTransform:"capitalize" }}>{r.urgencyLevel}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:20, padding:"24px 26px", boxShadow:"0 4px 12px rgba(140,20,20,.04)" }}>
-              <h2 style={{ fontSize:17, fontWeight:800, color:"#1a0a07", marginBottom:20 }}>Quick Actions</h2>
-              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                {[
-                  { label:"New Blood Request", sub:"Request donors for a blood type", color:"#C0392B", path:"/hospital/requests/new" },
-                  { label:"Update Blood Stock", sub:"Edit inventory levels",            color:"#2E86C1", path:"/hospital/inventory" },
-                  { label:"View All Requests",  sub:"Track and manage all requests",   color:"#8E44AD", path:"/hospital/requests" },
-                ].map(({ label, sub, color, path }) => (
-                  <button key={label} onClick={() => navigate(path)}
-                    style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 16px",
-                      background:"none", border:`1.5px solid ${color}22`, borderRadius:14,
-                      cursor:"pointer", textAlign:"left", fontFamily:"Sora,sans-serif", transition:"all .18s" }}
-                    onMouseEnter={e=>{ e.currentTarget.style.background=`${color}08`; e.currentTarget.style.transform="translateX(4px)"; }}
-                    onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.transform="translateX(0)"; }}>
-                    <div style={{ width:42, height:42, borderRadius:12, background:`${color}18`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                      <div style={{ width:16, height:16, borderRadius:4, background:color }}/>
-                    </div>
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:700, color:"#1a0a07" }}>{label}</div>
-                      <div style={{ fontSize:11, color:"#9B7B77", marginTop:2 }}>{sub}</div>
-                    </div>
-                    <svg style={{ marginLeft:"auto" }} width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M5 3l4 4-4 4" stroke="#9B7B77" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* 4. DONOR HEATMAP */}
-          <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:20, padding:"24px 28px", boxShadow:"0 4px 12px rgba(140,20,20,.04)" }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18 }}>
-              <div>
-                <h2 style={{ fontSize:17, fontWeight:800, color:"#1a0a07" }}>Nearby Available Donors</h2>
-                <p style={{ fontSize:12, color:"#9B7B77", marginTop:4 }}>Live map — 10 km radius</p>
-              </div>
-              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                <span style={{ fontSize:10, fontWeight:700, color:"#C0392B", background:"rgba(192,57,43,.08)", padding:"5px 12px", borderRadius:20 }}>● LIVE</span>
-                <button onClick={()=>navigate("/hospital/donors-map")}
-                  style={{ padding:"6px 14px", background:"linear-gradient(135deg,#C0392B,#8B1A1A)", color:"#fff",
-                    border:"none", borderRadius:8, fontSize:11, fontWeight:700, cursor:"pointer",
-                    fontFamily:"'Sora',sans-serif" }}>
-                  Full Map →
+          {/* 5. QUICK ACTIONS */}
+          <div style={{ background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:20, padding:"24px 26px", boxShadow:"0 4px 12px rgba(140,20,20,.04)" }}>
+            <h2 style={{ fontSize:17, fontWeight:800, color:"#1a0a07", marginBottom:20 }}>Quick Actions</h2>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
+              {[
+                { label:"New Blood Request", sub:"Request donors for a blood type", color:"#C0392B", path:"/hospital/requests/new" },
+                { label:"Update Blood Stock", sub:"Edit inventory levels",           color:"#2E86C1", path:"/hospital/inventory" },
+                { label:"View All Requests",  sub:"Track and manage all requests",  color:"#8E44AD", path:"/hospital/requests" },
+              ].map(({ label, sub, color, path }) => (
+                <button key={label} onClick={() => navigate(path)}
+                  style={{ display:"flex", alignItems:"center", gap:14, padding:"16px 18px",
+                    background:"none", border:`1.5px solid ${color}22`, borderRadius:14,
+                    cursor:"pointer", textAlign:"left", fontFamily:"Sora,sans-serif", transition:"all .18s" }}
+                  onMouseEnter={e=>{ e.currentTarget.style.background=`${color}08`; e.currentTarget.style.transform="translateX(4px)"; }}
+                  onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.transform="translateX(0)"; }}>
+                  <div style={{ width:42, height:42, borderRadius:12, background:`${color}18`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <div style={{ width:16, height:16, borderRadius:4, background:color }}/>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:700, color:"#1a0a07" }}>{label}</div>
+                    <div style={{ fontSize:11, color:"#9B7B77", marginTop:2 }}>{sub}</div>
+                  </div>
+                  <svg style={{ marginLeft:"auto" }} width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M5 3l4 4-4 4" stroke="#9B7B77" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </button>
-              </div>
+              ))}
             </div>
-            <DonorHeatmap hospitalLat={user?.latitude} hospitalLng={user?.longitude} hospitalName={user?.name || "Your Hospital"}/>
           </div>
         </>
       )}

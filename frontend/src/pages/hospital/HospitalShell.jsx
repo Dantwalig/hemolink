@@ -31,6 +31,7 @@ export default function HospitalShell({ children, title, subtitle, action }) {
         .hosp-logout{display:flex;align-items:center;gap:8px;background:none;border:none;color:rgba(255,255,255,.28);font-size:13px;cursor:pointer;padding:14px 20px;font-family:'Sora',sans-serif;transition:color .18s;width:100%;}
         .hosp-logout:hover{color:rgba(255,255,255,.6);}
         ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:#E8D5D0;border-radius:3px;}
+        @keyframes hl-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.4);}}
       `}</style>
 
       {/* Sidebar */}
