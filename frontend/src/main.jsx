@@ -11,7 +11,8 @@ import HospitalRegisterPage from "./pages/HospitalRegisterPage.jsx";
 import AdminLoginPage       from "./pages/AdminLoginPage.jsx";
 import DonorRegisterPage    from "./pages/donor/DonorRegisterPage.jsx";
 import DonorDashboard       from "./pages/donor/DonorDashboard.jsx";
-import DonorRespondPage     from "./pages/donor/DonorRespondPage.jsx";
+import DonorRespondPage          from "./pages/donor/DonorRespondPage.jsx";
+import DonorNotificationsPage    from "./pages/donor/DonorNotificationsPage.jsx";
 import HospitalDashboard    from "./pages/hospital/HospitalDashboard.jsx";
 import HospitalRequests     from "./pages/hospital/HospitalRequests.jsx";
 import HospitalInventory    from "./pages/hospital/HospitalInventory.jsx";
@@ -53,6 +54,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             {/* Donor protected */}
             <Route path="/donor/dashboard" element={
               <ProtectedRoute role="donor"><DonorDashboard /></ProtectedRoute>
+            } />
+            <Route path="/donor/notifications" element={
+              <ProtectedRoute role="donor"><DonorNotificationsPage /></ProtectedRoute>
             } />
 
             {/* Hospital protected */}

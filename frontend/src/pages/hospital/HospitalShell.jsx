@@ -34,11 +34,11 @@ export default function HospitalShell({ children, title, subtitle, action }) {
       `}</style>
 
       {/* Sidebar */}
-      <aside style={{ width:230, background:"linear-gradient(185deg,#C0392B 0%,#7D1212 100%)", display:"flex", flexDirection:"column", padding:"24px 0", flexShrink:0, position:"sticky", top:0, height:"100vh", borderRight:"1px solid rgba(192,57,43,.12)" }}>
+      <aside style={{ width:230, background:"linear-gradient(185deg,#1a0505 0%,#0a0000 100%)", display:"flex", flexDirection:"column", padding:"24px 0", flexShrink:0, position:"sticky", top:0, height:"100vh", borderRight:"1px solid rgba(192,57,43,.12)" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 20px 18px", borderBottom:"1px solid rgba(255,255,255,.06)", marginBottom:8 }}>
           <LogoDrop size={30}/>
           <div>
-            <div style={{ fontWeight:800, fontSize:15, color:"#fff" }}>Hemo<span style={{ color:"#C0392B" }}>Link</span></div>
+            <div style={{ fontWeight:800, fontSize:15, color:"#fff" }}>Hemo<span style={{ color:"#E87B6E" }}>Link</span></div>
             <div style={{ fontSize:9, color:"#E87B6E", textTransform:"uppercase", letterSpacing:1.2, fontWeight:700, marginTop:2 }}>Hospital</div>
           </div>
         </div>

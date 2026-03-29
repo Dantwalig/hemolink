@@ -141,7 +141,7 @@ function DonorHeatmap({ hospitalLat, hospitalLng, hospitalName }) {
 
   if (!hospitalLat || !hospitalLng) {
     return (
-      <div style={{ height:320, borderRadius:16, background:"rgba(192,57,43,.03)", border:"1.5px dashed #E8D5D0",
+      <div style={{ height:240, borderRadius:16, background:"rgba(192,57,43,.03)", border:"1.5px dashed #E8D5D0",
         display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:14 }}>
         <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
           <path d="M18 3a11 11 0 0 1 11 11c0 8-11 20-11 20S7 22 7 14A11 11 0 0 1 18 3z" stroke="#C0392B" strokeWidth="2" opacity=".35"/>
@@ -157,7 +157,7 @@ function DonorHeatmap({ hospitalLat, hospitalLng, hospitalName }) {
 
   return (
     <div style={{ position:"relative" }}>
-      <div ref={mapRef} style={{ height:340, borderRadius:16, overflow:"hidden", border:"1.5px solid #F0E0DC", boxShadow:"0 4px 20px rgba(140,20,20,.07)" }}/>
+      <div ref={mapRef} style={{ height:240, borderRadius:16, overflow:"hidden", border:"1.5px solid #F0E0DC", boxShadow:"0 4px 20px rgba(140,20,20,.07)" }}/>
 
       {/* Donor count badge */}
       {donorCount !== null && (
@@ -380,9 +380,17 @@ export default function HospitalDashboard() {
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18 }}>
               <div>
                 <h2 style={{ fontSize:17, fontWeight:800, color:"#1a0a07" }}>Nearby Available Donors</h2>
-                <p style={{ fontSize:12, color:"#9B7B77", marginTop:4 }}>Live map of available donors within 10 km</p>
+                <p style={{ fontSize:12, color:"#9B7B77", marginTop:4 }}>Live map — 10 km radius</p>
               </div>
-              <span style={{ fontSize:10, fontWeight:700, color:"#C0392B", background:"rgba(192,57,43,.08)", padding:"5px 12px", borderRadius:20 }}>● LIVE</span>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ fontSize:10, fontWeight:700, color:"#C0392B", background:"rgba(192,57,43,.08)", padding:"5px 12px", borderRadius:20 }}>● LIVE</span>
+                <button onClick={()=>navigate("/hospital/donors-map")}
+                  style={{ padding:"6px 14px", background:"linear-gradient(135deg,#C0392B,#8B1A1A)", color:"#fff",
+                    border:"none", borderRadius:8, fontSize:11, fontWeight:700, cursor:"pointer",
+                    fontFamily:"'Sora',sans-serif" }}>
+                  Full Map →
+                </button>
+              </div>
             </div>
             <DonorHeatmap hospitalLat={user?.latitude} hospitalLng={user?.longitude} hospitalName={user?.name || "Your Hospital"}/>
           </div>

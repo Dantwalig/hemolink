@@ -27,9 +27,11 @@ const DISTRICT_NAMES = {
   RUBAVU:"Rubavu", RUTSIRO:"Rutsiro", RUSIZI:"Rusizi",
 };
 
-const NAV = [
+const BASE_NAV = [
   { label:"Dashboard", path:"/donor/dashboard",
     Icon:({size,color})=><svg width={size} height={size} viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/></svg> },
+  { label:"Notifications", path:"/donor/notifications", badge: true,
+    Icon:({size,color})=><svg width={size} height={size} viewBox="0 0 16 16" fill="none"><path d="M8 2a4 4 0 0 0-4 4v3l-1.5 2v1h11v-1L12 9V6a4 4 0 0 0-4-4z" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0" stroke={color} strokeWidth="1.3" strokeLinecap="round"/></svg> },
 ];
 
 function StatCard({ label, value, icon, color, bg, sub }) {
@@ -146,7 +148,14 @@ export default function DonorDashboard() {
   const btype      = profile?.bloodTypeCode || "—";
   const btypeColor = BLOOD_COLORS[btype] || "#C0392B";
   const acceptedCount = notifs.filter(n => n.responseStatus === "Accepted").length;
+  const pendingCount  = notifs.filter(n => n.responseStatus === "pending").length;
   const recentNotifs  = [...notifs].sort((a,b) => b.notificationId - a.notificationId).slice(0, 5);
+
+  const NAV = BASE_NAV.map(n =>
+    n.badge && pendingCount > 0
+      ? { ...n, label: `Notifications (${pendingCount})` }
+      : n
+  );
 
   return (
     <DashShell
