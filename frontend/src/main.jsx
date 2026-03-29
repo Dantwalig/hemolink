@@ -15,6 +15,7 @@ import DonorRespondPage     from "./pages/donor/DonorRespondPage.jsx";
 import HospitalDashboard    from "./pages/hospital/HospitalDashboard.jsx";
 import HospitalRequests     from "./pages/hospital/HospitalRequests.jsx";
 import HospitalInventory    from "./pages/hospital/HospitalInventory.jsx";
+import HospitalDonorsMap    from "./pages/hospital/HospitalDonorsMap.jsx";
 import NewRequest           from "./pages/hospital/NewRequest.jsx";
 import AdminDashboard       from "./pages/admin/AdminDashboard.jsx";
 import AdminHospitals       from "./pages/admin/AdminHospitals.jsx";
@@ -66,6 +67,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             } />
             <Route path="/hospital/inventory" element={
               <ProtectedRoute role="hospital"><HospitalInventory /></ProtectedRoute>
+            } />
+            <Route path="/hospital/donors-map" element={
+              <ProtectedRoute role="hospital"><HospitalDonorsMap /></ProtectedRoute>
             } />
 
             {/* Admin protected */}

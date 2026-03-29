@@ -12,6 +12,8 @@ const NAV = [
     Icon:({s,c})=><svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 1C8 1 3 6.5 3 10a5 5 0 0 0 10 0C13 6.5 8 1 8 1z" stroke={c} strokeWidth="1.3"/><path d="M5.5 11a2.5 2.5 0 0 0 2.5 2" stroke={c} strokeWidth="1.3" strokeLinecap="round"/></svg> },
   { label:"Inventory", path:"/hospital/inventory",
     Icon:({s,c})=><svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M2 5.5l6-3 6 3v7l-6 3-6-3v-7z" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 2.5v13M2 5.5l6 3 6-3" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/></svg> },
+  { label:"Donors Map", path:"/hospital/donors-map",
+    Icon:({s,c})=><svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 2a4 4 0 0 1 4 4c0 4-4 8-4 8S4 10 4 6a4 4 0 0 1 4-4z" stroke={c} strokeWidth="1.3"/><circle cx="8" cy="6" r="1.5" fill={c}/></svg> },
 ];
 
 export default function HospitalShell({ children, title, subtitle, action }) {

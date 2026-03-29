@@ -57,14 +57,17 @@ const getByToken = async (req, res, next) => {
     }
 
     return success(res, {
-      notification_id:  notification.notificationId,
-      hospital_name:    notification.bloodRequest.hospital.name,
-      hospital_sector:  notification.bloodRequest.hospital.sector,
-      blood_type_code:  notification.bloodRequest.bloodTypeCode,
-      units_needed:     notification.bloodRequest.unitsNeeded,
-      urgency_level:    notification.bloodRequest.urgencyLevel,
-      needed_by:        notification.bloodRequest.neededBy,
-      distance_km:      distance,
+      notification_id:   notification.notificationId,
+      hospital_name:     notification.bloodRequest.hospital.name,
+      hospital_sector:   notification.bloodRequest.hospital.sector,
+      hospital_district: notification.bloodRequest.hospital.districtCode,
+      hospital_lat:      hospital.latitude,
+      hospital_lng:      hospital.longitude,
+      blood_type_code:   notification.bloodRequest.bloodTypeCode,
+      units_needed:      notification.bloodRequest.unitsNeeded,
+      urgency_level:     notification.bloodRequest.urgencyLevel,
+      needed_by:         notification.bloodRequest.neededBy,
+      distance_km:       distance,
     }, "Request details retrieved.");
   } catch (err) {
     next(err);
