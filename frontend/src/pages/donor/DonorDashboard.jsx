@@ -55,7 +55,8 @@ function StatCard({ label, value, icon, color, bg, sub }) {
   );
 }
 
-function NotificationItem({ notif }) {
+function NotificationItem({ notif, onRespond, responding }) {
+  const navigate = useNavigate();
   const statusColors = {
     Accepted: { bg:"rgba(30,132,73,.1)", c:"#1E8449" },
     Declined: { bg:"rgba(192,57,43,.1)", c:"#C0392B" },
@@ -65,24 +66,64 @@ function NotificationItem({ notif }) {
   const reqBlood = notif.bloodRequest?.bloodTypeCode || "—";
   const bc = BLOOD_COLORS[reqBlood] || "#C0392B";
   const hospital = notif.bloodRequest?.hospital?.name || "Hospital";
+  const isPending = notif.responseStatus === "pending";
 
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 16px",
-      background:"rgba(253,244,242,.6)", borderRadius:14, border:"1px solid #F8EDEB" }}>
-      <div style={{ width:44, height:44, borderRadius:14, background:`${bc}14`,
-        display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-        <span style={{ fontSize:17, fontWeight:900, color:bc, fontFamily:"'Lora',serif" }}>{reqBlood}</span>
-      </div>
-      <div style={{ flex:1 }}>
-        <div style={{ fontSize:13, fontWeight:700, color:"#1a0a07" }}>{hospital}</div>
-        <div style={{ fontSize:11, color:"#9B7B77", marginTop:2 }}>
-          {notif.sentAt ? new Date(notif.sentAt).toLocaleString("en-RW", { dateStyle:"medium", timeStyle:"short" }) : "—"}
+    <div style={{ padding:"14px 16px",
+      background: isPending ? "rgba(255,248,240,.9)" : "rgba(253,244,242,.6)",
+      borderRadius:14,
+      border: isPending ? "1.5px solid rgba(230,126,34,.3)" : "1px solid #F8EDEB",
+      borderLeft: isPending ? "3px solid #E67E22" : "1px solid #F8EDEB",
+    }}>
+      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+        <div style={{ width:44, height:44, borderRadius:14, background:`${bc}14`,
+          display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          <span style={{ fontSize:17, fontWeight:900, color:bc, fontFamily:"'Lora',serif" }}>{reqBlood}</span>
         </div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#1a0a07" }}>{hospital}</div>
+          <div style={{ fontSize:11, color:"#9B7B77", marginTop:2 }}>
+            {notif.sentAt ? new Date(notif.sentAt).toLocaleString("en-RW", { dateStyle:"medium", timeStyle:"short" }) : "—"}
+          </div>
+        </div>
+        <span style={{ fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:20,
+          background:sc.bg, color:sc.c, whiteSpace:"nowrap" }}>
+          {notif.responseStatus || "pending"}
+        </span>
       </div>
-      <span style={{ fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:20,
-        background:sc.bg, color:sc.c, whiteSpace:"nowrap" }}>
-        {notif.responseStatus || "pending"}
-      </span>
+      {isPending && (
+        <div style={{ display:"flex", gap:8, marginTop:10 }}>
+          <button
+            onClick={() => onRespond(notif.token, "Accepted", notif.notificationId)}
+            disabled={responding === notif.notificationId}
+            style={{ flex:1, padding:"8px 0", background:"linear-gradient(135deg,#1E8449,#145A32)",
+              color:"#fff", border:"none", borderRadius:8, fontSize:12, fontWeight:700,
+              cursor:responding===notif.notificationId?"not-allowed":"pointer",
+              fontFamily:"'Sora',sans-serif", opacity:responding===notif.notificationId?.65:1,
+              display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+              <path d="M2.5 7l3.5 3.5 5.5-7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            {responding===notif.notificationId ? "…" : "Can Donate"}
+          </button>
+          <button
+            onClick={() => onRespond(notif.token, "Declined", notif.notificationId)}
+            disabled={responding === notif.notificationId}
+            style={{ padding:"8px 12px", background:"transparent", color:"#C0392B",
+              border:"1.5px solid rgba(192,57,43,.3)", borderRadius:8, fontSize:12, fontWeight:700,
+              cursor:responding===notif.notificationId?"not-allowed":"pointer",
+              fontFamily:"'Sora',sans-serif" }}>
+            Decline
+          </button>
+          <button
+            onClick={() => navigate(`/donor/respond?token=${notif.token}`)}
+            style={{ padding:"8px 10px", background:"rgba(192,57,43,.06)", color:"#C0392B",
+              border:"1.5px solid rgba(192,57,43,.15)", borderRadius:8, fontSize:11, fontWeight:600,
+              cursor:"pointer", fontFamily:"'Sora',sans-serif", whiteSpace:"nowrap" }}>
+            Map →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -96,6 +137,7 @@ export default function DonorDashboard() {
   const [loading, setLoading]   = useState(true);
   const [toggling,setToggling]  = useState(false);
   const [smsToggling,setSmsToggling] = useState(false);
+  const [responding,setResponding] = useState(null);
   const [error,   setError]     = useState("");
 
   useEffect(() => {
@@ -121,8 +163,19 @@ export default function DonorDashboard() {
     finally { setSmsToggling(false); }
   };
 
-  const toggleAvailability = async () => {
-    if (!profile) return;
+  const handleRespond = async (token, response_status, notifId) => {
+    setResponding(notifId);
+    try {
+      await api.post("/notifications/respond", { token, response_status });
+      setNotifs(prev => prev.map(n =>
+        n.notificationId === notifId ? { ...n, responseStatus: response_status } : n
+      ));
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to respond.");
+    } finally { setResponding(null); }
+  };
+
+  const toggleAvailability = async () => {    if (!profile) return;
     setToggling(true);
     try {
       const res = await api.put("/donors/availability", { available: !profile.available });
@@ -293,6 +346,14 @@ export default function DonorDashboard() {
                   <IconMessage size={16} color="#C0392B"/>
                 </div>
                 Recent Notifications
+                <button
+                  onClick={() => navigate("/donor/notifications")}
+                  style={{ marginLeft:"auto", fontSize:12, fontWeight:700, color:"#C0392B",
+                    background:"rgba(192,57,43,.07)", border:"1px solid rgba(192,57,43,.2)",
+                    borderRadius:8, padding:"4px 12px", cursor:"pointer",
+                    fontFamily:"'Sora',sans-serif", whiteSpace:"nowrap" }}>
+                  View All →
+                </button>
               </h2>
               {recentNotifs.length === 0 ? (
                 <div style={{ textAlign:"center", padding:"32px 20px", color:"#9B7B77", fontSize:13,
@@ -305,7 +366,7 @@ export default function DonorDashboard() {
                 </div>
               ) : (
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  {recentNotifs.map(n => <NotificationItem key={n.notificationId} notif={n}/>)}
+                  {recentNotifs.map(n => <NotificationItem key={n.notificationId} notif={n} onRespond={handleRespond} responding={responding}/>)}
                 </div>
               )}
             </div>

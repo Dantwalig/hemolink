@@ -144,6 +144,12 @@ export default function HospitalDonorsMap() {
   const [selectedType, setSelectedType] = useState("all");
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [refreshing,  setRefreshing]  = useState(false);
+  const [hospProfile, setHospProfile] = useState(null);
+
+  // Parse coordinates as numbers (localStorage may store strings)
+  const hospitalLat = hospProfile?.latitude != null ? parseFloat(hospProfile.latitude) : null;
+  const hospitalLng = hospProfile?.longitude != null ? parseFloat(hospProfile.longitude) : null;
+  const hospitalName = hospProfile?.name || user?.name || "Your Hospital";
 
   const fetchDonors = async (showSpinner = true) => {
     if (showSpinner) setRefreshing(true);
@@ -155,7 +161,13 @@ export default function HospitalDonorsMap() {
     finally  { setLoading(false); setRefreshing(false); }
   };
 
-  useEffect(() => { fetchDonors(false); }, []);
+  useEffect(() => {
+    // Fetch hospital profile to get fresh coordinates
+    api.get("/hospitals/profile")
+      .then(res => setHospProfile(res.data.data))
+      .catch(() => setHospProfile(user)); // fallback to cached auth user
+    fetchDonors(false);
+  }, []);
 
   // Auto-refresh every 60s
   useEffect(() => {
@@ -243,9 +255,9 @@ export default function HospitalDonorsMap() {
               </div>
             ) : (
               <LiveDonorMap
-                hospitalLat={user?.latitude}
-                hospitalLng={user?.longitude}
-                hospitalName={user?.name || "Your Hospital"}
+                hospitalLat={hospitalLat}
+                hospitalLng={hospitalLng}
+                hospitalName={hospitalName}
                 donors={donors}
                 selectedType={selectedType}
               />
