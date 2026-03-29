@@ -15,6 +15,18 @@ const BLOOD_COLORS = {
   "B+":"#2E86C1","B-":"#1A5276","AB+":"#8E44AD","AB-":"#6C3483",
 };
 
+// Human-readable district names
+const DISTRICT_NAMES = {
+  GASABO:"Gasabo, Kigali", KICUKIRO:"Kicukiro, Kigali", NYARUGENGE:"Nyarugenge, Kigali",
+  BURERA:"Burera", GAKENKE:"Gakenke", GICUMBI:"Gicumbi", MUSANZE:"Musanze", RULINDO:"Rulindo",
+  GISAGARA:"Gisagara", HUYE:"Huye", KAMONYI:"Kamonyi", MUHANGA:"Muhanga",
+  NYAMAGABE:"Nyamagabe", NYANZA:"Nyanza", NYARUGURU:"Nyaruguru", RUHANGO:"Ruhango",
+  BUGESERA:"Bugesera", GATSIBO:"Gatsibo", KAYONZA:"Kayonza", KIREHE:"Kirehe",
+  NGOMA:"Ngoma", NYAGATARE:"Nyagatare", RWAMAGANA:"Rwamagana",
+  KARONGI:"Karongi", NGORORERO:"Ngororero", NYABIHU:"Nyabihu", NYAMASHEKE:"Nyamasheke",
+  RUBAVU:"Rubavu", RUTSIRO:"Rutsiro", RUSIZI:"Rusizi",
+};
+
 const NAV = [
   { label:"Dashboard", path:"/donor/dashboard",
     Icon:({size,color})=><svg width={size} height={size} viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1" stroke={color} strokeWidth="1.3"/></svg> },
@@ -81,6 +93,7 @@ export default function DonorDashboard() {
   const [notifs,  setNotifs]    = useState([]);
   const [loading, setLoading]   = useState(true);
   const [toggling,setToggling]  = useState(false);
+  const [smsToggling,setSmsToggling] = useState(false);
   const [error,   setError]     = useState("");
 
   useEffect(() => {
@@ -95,6 +108,16 @@ export default function DonorDashboard() {
       .catch(() => setError("Failed to load profile."))
       .finally(() => setLoading(false));
   }, []);
+
+  const toggleSmsConsent = async () => {
+    if (!profile) return;
+    setSmsToggling(true);
+    try {
+      const res = await api.put("/donors/profile", { consentSms: !profile.consentSms });
+      setProfile(p => ({ ...p, consentSms: res.data.data.consentSms }));
+    } catch { setError("Failed to update SMS preference."); }
+    finally { setSmsToggling(false); }
+  };
 
   const toggleAvailability = async () => {
     if (!profile) return;
@@ -231,7 +254,7 @@ export default function DonorDashboard() {
                   { label:"Full Name",    value:profile?.fullName, Icon:IconUser },
                   { label:"Phone",        value:profile?.phone,    Icon:IconPhone },
                   { label:"Blood Type",   value:profile?.bloodTypeCode, Icon:IconBlood },
-                  { label:"Location",     value:profile?.districtCode || "Not set", Icon:IconPin },
+                  { label:"Location",     value: profile?.districtCode ? (DISTRICT_NAMES[profile.districtCode] || profile.districtCode) : "Not set", Icon:IconPin },
                   { label:"Member Since", value:profile?.createdAt
                     ? new Date(profile.createdAt).toLocaleDateString("en-RW", { dateStyle:"medium" })
                     : "—", Icon:IconCalendar },
@@ -281,6 +304,37 @@ export default function DonorDashboard() {
 
           {/* RIGHT column */}
           <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
+
+            {/* SMS consent toggle */}
+            <div style={{
+              background:"#fff", border:"1.5px solid #F0E0DC", borderRadius:22,
+              padding:"22px 26px", boxShadow:"0 4px 20px rgba(140,20,20,.05)",
+              display:"flex", alignItems:"center", justifyContent:"space-between", gap:14,
+            }}>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13, fontWeight:800, color:"#1a0a07", marginBottom:4 }}>SMS Alerts</div>
+                <div style={{ fontSize:12, color:"#9B7B77", lineHeight:1.55 }}>
+                  {profile?.consentSms ? "You'll receive SMS when your blood type is needed." : "Enable to get SMS alerts when hospitals need you."}
+                </div>
+              </div>
+              <button
+                onClick={toggleSmsConsent}
+                disabled={smsToggling}
+                style={{
+                  position:"relative", width:48, height:26, borderRadius:13, border:"none",
+                  background: profile?.consentSms ? "#6B3FA0" : "#D0C0C0",
+                  cursor: smsToggling ? "not-allowed" : "pointer",
+                  transition:"background .25s", flexShrink:0,
+                }}
+                title={profile?.consentSms ? "Disable SMS alerts" : "Enable SMS alerts"}
+              >
+                <div style={{
+                  position:"absolute", top:3, left: profile?.consentSms ? 24 : 3,
+                  width:20, height:20, borderRadius:"50%", background:"#fff",
+                  boxShadow:"0 1px 4px rgba(0,0,0,.25)", transition:"left .25s",
+                }}/>
+              </button>
+            </div>
 
             {/* Availability toggle */}
             <div style={{

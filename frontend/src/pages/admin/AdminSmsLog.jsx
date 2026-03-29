@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import api from "../../utils/api.js";
 import AdminShell from "./AdminShell.jsx";
 
+
 const RESP_STYLE = {
   pending:  { bg:"rgba(230,126,34,.1)",   color:"#B7560F",   label:"Pending" },
   Accepted: { bg:"rgba(30,132,73,.1)",    color:"#1E8449",   label:"Accepted" },
@@ -127,4 +128,3 @@ export default function AdminSmsLog() {
   );
 }
 
-const ERR = { display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:20, fontWeight:500 };

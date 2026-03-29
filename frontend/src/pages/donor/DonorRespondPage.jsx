@@ -69,7 +69,7 @@ export default function DonorRespondPage() {
           </div>
           <h2 style={{ fontSize:22, fontWeight:800, color:"#1a0a07", marginBottom:10 }}>{t("respond.expiredTitle")}</h2>
           <p style={{ fontSize:15, color:"#7A4A45", lineHeight:1.7, marginBottom:28 }}>{t("respond.expiredDesc")}</p>
-          <button className="hl-btn-red" onClick={()=>navigate("/login")}>Go to My Dashboard</button>
+          <button className="hl-btn-red" onClick={()=>navigate("/donor/dashboard")}>Go to My Dashboard</button>
         </div>
       </Card>
     ),

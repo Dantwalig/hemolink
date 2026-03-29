@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import api from "../../utils/api.js";
 import AdminShell from "./AdminShell.jsx";
 
+const ERR = { display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:20, fontWeight:500 };
+
 function ApprovalBadge({ approved }) {
   return (
     <span style={{ display:"inline-flex", alignItems:"center", gap:5, background:approved?"rgba(30,132,73,.1)":"rgba(230,126,34,.12)", color:approved?"#1E8449":"#B7560F", fontWeight:700, fontSize:11, padding:"4px 12px", borderRadius:20 }}>
@@ -108,4 +110,3 @@ export default function AdminHospitals() {
   );
 }
 
-const ERR = { display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:20, fontWeight:500 };

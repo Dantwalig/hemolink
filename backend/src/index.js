@@ -11,17 +11,21 @@ const errorHandler = require("./middlewares/errorHandler");
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
-// ── CORS — only allow the configured frontend origin ──────────────────────
+// ── CORS — allow configured frontend origins ───────────────────────────────
 const allowedOrigins = [
-  process.env.FRONTEND_URL || "http://localhost:5173",
   "http://localhost:5173",
   "http://localhost:3000",
+  // Support multiple comma-separated production URLs via env var
+  ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",").map(s => s.trim()) : []),
 ];
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow requests with no origin (Swagger UI, curl, mobile)
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    // Allow requests with no origin (Swagger UI, curl, Render health checks)
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    // Allow any *.vercel.app subdomain for preview deployments
+    if (/^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin)) return cb(null, true);
     cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,

@@ -83,5 +83,3 @@ export default function AdminRequests() {
   );
 }
 
-const ERR = { display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:20, fontWeight:500 };
-const TD = { padding:"12px 14px" };

@@ -102,6 +102,3 @@ export default function AdminDonors() {
   );
 }
 
-const ERR = { display:"flex", alignItems:"center", gap:8, background:"#fff2f2", border:"1.5px solid rgba(192,57,43,.25)", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#C0392B", marginBottom:20, fontWeight:500 };
-const SEL = { padding:"9px 14px", border:"1.5px solid #E8D5D0", borderRadius:9, fontSize:13, fontFamily:"'Sora',sans-serif", color:"#1a0a07", background:"#fff", cursor:"pointer" };
-const TD = { padding:"12px 16px", fontSize:13 };

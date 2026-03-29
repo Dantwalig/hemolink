@@ -36,6 +36,18 @@ export default function HomePage() {
         @keyframes floatDrop{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
         @keyframes bloodFall{0%{transform:translateY(-40px);opacity:0;}8%{opacity:.6;}90%{opacity:.35;}100%{transform:translateY(520px);opacity:0;}}
+        @media(max-width:900px){
+          .hl-hero-wrap{flex-direction:column !important;padding:60px 24px 48px !important;gap:40px !important;}
+          .hl-hero-visual{display:none !important;}
+          .hl-hero-title{font-size:36px !important;}
+          .hl-header-nav{gap:6px !important;}
+          .hl-header-nav button{padding:7px 10px !important;font-size:12px !important;}
+          .hl-stats-inner{gap:14px !important;}
+          .hl-steps-wrap{padding:60px 24px !important;}
+          .hl-cta-section{padding:72px 24px !important;}
+          .hl-footer{padding:16px 24px !important;flex-direction:column !important;gap:10px !important;text-align:center !important;}
+          .hl-step-cards{flex-direction:column !important;align-items:center !important;}
+        }
         .hl-nav-btn{background:none;border:1.5px solid #E8D5D0;border-radius:9px;padding:8px 15px;font-size:13px;font-weight:600;cursor:pointer;color:#1a0a07;font-family:'Sora',sans-serif;transition:all .18s;white-space:nowrap;}
         .hl-nav-btn:hover{border-color:#C0392B;color:#C0392B;background:rgba(192,57,43,.04);}
         .hl-nav-primary{background:linear-gradient(135deg,#C0392B,#8B1A1A);border:none;border-radius:9px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;color:#fff;font-family:'Sora',sans-serif;box-shadow:0 4px 12px rgba(192,57,43,.35);transition:all .18s;white-space:nowrap;}
@@ -63,7 +75,7 @@ export default function HomePage() {
             <span style={{fontWeight:300,color:"#8B5A55"}}>Rwanda</span>
           </span>
         </div>
-        <nav style={S.nav}>
+        <nav style={S.nav} className="hl-header-nav">
           <button className="hl-nav-btn" onClick={() => navigate("/login")}>{t("nav.donorLogin")}</button>
           <button className="hl-nav-btn" onClick={() => navigate("/hospital-login")}>{t("nav.hospitalLogin")}</button>
           <button className="hl-nav-primary" onClick={() => navigate("/register")}>{t("nav.registerDonor")}</button>
@@ -72,7 +84,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero */}
-      <section style={S.hero}>
+      <section style={S.hero} className="hl-hero-wrap">
         {/* Falling blood drops */}
         <div style={S.dropsWrap}>
           {[[8,0,14],[18,1.4,10],[80,0.7,12],[88,2.1,16],[94,3.3,10]].map(([l,d,sz],i)=>(
@@ -85,12 +97,12 @@ export default function HomePage() {
           ))}
         </div>
 
-        <div style={{...S.heroContent, animation:"fadeInUp .7s ease both"}}>
+        <div style={{...S.heroContent, animation:"fadeInUp .7s ease both"}} className="hl-hero-content">
           <div style={S.badge}>
             <span style={{width:7,height:7,borderRadius:"50%",background:"#C0392B",display:"inline-block",animation:"pulse 1.5s infinite"}}/>
             <span>{t("home.badge")}</span>
           </div>
-          <h1 style={S.heroTitle}>
+          <h1 style={S.heroTitle} className="hl-hero-title">
             {t("home.heroTitle")}{" "}
             <em style={{fontStyle:"italic",fontFamily:"'Lora',serif",fontWeight:600,color:"#C0392B",fontSize:"1.05em"}}>
               {t("home.heroTitleEm")}
@@ -104,7 +116,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div style={{...S.heroVisual, animation:"fadeInUp .9s .2s ease both"}}>
+        <div style={{...S.heroVisual, animation:"fadeInUp .9s .2s ease both"}} className="hl-hero-visual">
           <div style={S.glowOrb}/>
           <div style={{animation:"floatDrop 5s ease-in-out infinite", position:"relative", zIndex:1}}>
             <svg width="170" height="210" viewBox="0 0 180 220" fill="none"
@@ -201,7 +213,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer style={S.footer}>
+      <footer style={S.footer} className="hl-footer">
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <LogoDrop size={26}/>
           <span style={{fontWeight:700,fontSize:14,color:"#1a0a07"}}>HemoLink Rwanda</span>

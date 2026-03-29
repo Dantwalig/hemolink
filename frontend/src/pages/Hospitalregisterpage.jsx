@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
 import LanguageSwitcher from "../utils/LanguageSwitcher.jsx";
@@ -87,11 +87,20 @@ function SelectField({ icon: Icon, value, onChange, onBlur, error, children, dis
 export default function HospitalRegisterPage() {
   const navigate = useNavigate();
   const [done,           setDone]           = useState(false);
+  const [countdown,      setCountdown]      = useState(5);
   const [loading,        setLoading]        = useState(false);
   const [serverError,    setServerError]    = useState("");
   const [errors,         setErrors]         = useState({});
   const [touched,        setTouched]        = useState({});
   const [locationStatus, setLocationStatus] = useState("idle");
+
+  // Auto-redirect to login after registration success
+  useEffect(() => {
+    if (!done) return;
+    if (countdown <= 0) { navigate("/hospital-login"); return; }
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [done, countdown, navigate]);
   const [form, setForm] = useState({
     name: "", phone: "", email: "", password: "", confirmPassword: "",
     provinceCode: "", districtCode: "", sector: "", cell: "", village: "",
@@ -172,8 +181,11 @@ export default function HospitalRegisterPage() {
           <strong>{form.name}</strong> has been registered and is pending admin approval.
           You will be notified at <strong>{form.email}</strong> once your account is activated.
         </p>
+        <p style={{ fontSize: 13, color: "#9B7B77", margin: 0 }}>
+          Redirecting to login in <strong style={{ color: "#C0392B" }}>{countdown}s</strong>…
+        </p>
         <button style={styles.btnPrimary} onClick={() => navigate("/hospital-login")}>
-          Go to Hospital Login
+          Go to Hospital Login Now
         </button>
       </div>
     </div>

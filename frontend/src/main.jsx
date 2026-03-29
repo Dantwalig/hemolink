@@ -21,6 +21,7 @@ import AdminHospitals       from "./pages/admin/AdminHospitals.jsx";
 import AdminDonors          from "./pages/admin/AdminDonors.jsx";
 import AdminSmsLog          from "./pages/admin/AdminSmsLog.jsx";
 import AdminRequests        from "./pages/admin/AdminRequests.jsx";
+import NotFoundPage          from "./pages/NotFoundPage.jsx";
 
 function ProtectedRoute({ children, role }) {
   const { user } = useAuth();
@@ -84,8 +85,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               <ProtectedRoute role="admin"><AdminRequests /></ProtectedRoute>
             } />
 
-            {/* Catch-all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Catch-all → proper 404 page */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
