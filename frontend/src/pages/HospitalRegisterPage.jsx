@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
+import { getCoordinates } from "../utils/geolocation";
 import LanguageSwitcher from "../utils/LanguageSwitcher.jsx";
 import {
   IconEmail, IconLock, IconEye, IconEyeOff, IconAlert, IconCheck,
@@ -107,17 +108,17 @@ export default function HospitalRegisterPage() {
     latitude: null, longitude: null,
   });
 
-  const getLocation = () => {
-    if (!navigator.geolocation) { setLocationStatus("denied"); return; }
+  const getLocation = async () => {
     setLocationStatus("loading");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setForm((f) => ({ ...f, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
-        setLocationStatus("granted");
-        setErrors((e) => ({ ...e, location: "" }));
-      },
-      () => setLocationStatus("denied")
-    );
+    try {
+      const coords = await getCoordinates();
+      setForm((f) => ({ ...f, latitude: coords.latitude, longitude: coords.longitude }));
+      setLocationStatus(coords.source === "gps" ? "granted" : "granted-ip");
+      setErrors((e) => ({ ...e, location: "" }));
+    } catch (err) {
+      if (err.code === 1) setLocationStatus("denied");
+      else setLocationStatus("unavailable");
+    }
   };
 
   const set = (field, val) => {
@@ -146,7 +147,7 @@ export default function HospitalRegisterPage() {
     const fields = ["name","phone","email","password","confirmPassword","provinceCode","districtCode","sector","cell","village"];
     const errs = {};
     fields.forEach(f => { errs[f] = f === "confirmPassword" ? validators.confirmPassword(form[f], form.password) : validators[f]?.(form[f]) ?? ""; });
-    if (locationStatus !== "granted") errs.location = "Please share your GPS location to continue.";
+    if (locationStatus !== "granted" && locationStatus !== "granted-ip") errs.location = "Please share your GPS location to continue.";
     setErrors(errs);
     setTouched({ ...Object.fromEntries(fields.map(f => [f, true])), location: true });
     return !Object.values(errs).some(Boolean);
@@ -313,15 +314,17 @@ export default function HospitalRegisterPage() {
               </div>
               <div style={styles.locationSub}>
                 {locationStatus === "idle"    && "Required to appear on the donor map."}
-                {locationStatus === "loading" && "Getting location…"}
+                {locationStatus === "loading" && "Getting location..."}
                 {locationStatus === "granted" && `Location saved (${form.latitude?.toFixed(4)}, ${form.longitude?.toFixed(4)})`}
-                {locationStatus === "denied"  && "Location denied. Please enable browser location access."}
+                {locationStatus === "granted-ip" && `Approximate location saved (${form.latitude?.toFixed(4)}, ${form.longitude?.toFixed(4)})`}
+                {locationStatus === "denied"  && "Location permission denied. Please enable it in your browser settings."}
+                {locationStatus === "unavailable" && "Could not detect location. Please try again."}
               </div>
               {touched.location && errors.location && (
                 <span style={{ fontSize: 12, color: "#C0392B", display: "block", marginTop: 4 }}>{errors.location}</span>
               )}
             </div>
-            {locationStatus !== "granted" && (
+            {locationStatus !== "granted" && locationStatus !== "granted-ip" && (
               <button type="button"
                 style={{ ...styles.submitBtn, marginTop: 0, padding: "8px 18px", fontSize: 13, width: "auto", flexShrink: 0 }}
                 onClick={getLocation} disabled={locationStatus === "loading"}>
