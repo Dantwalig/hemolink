@@ -147,26 +147,26 @@ export function DashShell({ nav, user, onLogout, children, logoLabel = "Rwanda",
   return (
     <div style={{ display:"flex", height:"100vh", overflow:"hidden", fontFamily:"'Sora',sans-serif", background:"#FDF4F2" }}>
       <style>{SORA_FONT + SHARED_BTN_CSS + `
-        .hl-nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:rgba(255,255,255,.55);font-size:13.5px;cursor:pointer;border-radius:10px;text-align:left;font-family:'Sora',sans-serif;font-weight:500;transition:all .16s;width:100%;}
-        .hl-nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85);}
-        .hl-nav-active{background:rgba(192,57,43,.32) !important;color:#fff !important;font-weight:700 !important;}
-        .hl-logout{display:flex;align-items:center;gap:8px;background:none;border:none;color:rgba(255,255,255,.3);font-size:13px;cursor:pointer;padding:14px 20px;font-family:'Sora',sans-serif;transition:color .18s;}
-        .hl-logout:hover{color:rgba(255,255,255,.65);}
+        .hl-nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:rgba(255,255,255,.6);font-size:13.5px;cursor:pointer;border-radius:10px;text-align:left;font-family:'Sora',sans-serif;font-weight:500;transition:all .16s;width:100%;}
+        .hl-nav-item:hover{background:rgba(0,0,0,.18);color:#fff;}
+        .hl-nav-active{background:rgba(0,0,0,.28) !important;color:#fff !important;font-weight:700 !important;box-shadow:inset 3px 0 0 #FFB3A7;}
+        .hl-logout{display:flex;align-items:center;gap:8px;background:none;border:none;color:rgba(255,255,255,.4);font-size:13px;cursor:pointer;padding:14px 20px;font-family:'Sora',sans-serif;transition:color .18s;}
+        .hl-logout:hover{color:rgba(255,255,255,.8);}
       `}</style>
       {/* Sidebar */}
-      <aside style={{ width:230, background:"linear-gradient(185deg,#C0392B 0%,#7D1212 100%)", display:"flex", flexDirection:"column", padding:"24px 0", flexShrink:0, position:"sticky", top:0, height:"100vh", borderRight:"1px solid rgba(192,57,43,.15)" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 20px 18px", borderBottom:"1px solid rgba(255,255,255,.07)", marginBottom:8 }}>
+      <aside style={{ width:230, background:"linear-gradient(185deg,#8B1A1A 0%,#6B0E0E 50%,#4A0808 100%)", display:"flex", flexDirection:"column", padding:"24px 0", flexShrink:0, position:"sticky", top:0, height:"100vh", borderRight:"1px solid rgba(0,0,0,.15)", boxShadow:"4px 0 24px rgba(139,26,26,.35)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 20px 18px", borderBottom:"1px solid rgba(255,255,255,.1)", marginBottom:8 }}>
           <LogoDrop size={30}/>
           <div>
-            <div style={{ fontWeight:800, fontSize:15, color:"#fff" }}>Hemo<span style={{ color:"#C0392B" }}>Link</span></div>
-            <div style={{ fontSize:9, color:"#E87B6E", textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginTop:2 }}>{logoLabel}</div>
+            <div style={{ fontWeight:800, fontSize:15, color:"#fff" }}>Hemo<span style={{ color:"#FFB3A7" }}>Link</span></div>
+            <div style={{ fontSize:9, color:"#FFB3A7", textTransform:"uppercase", letterSpacing:1, fontWeight:700, marginTop:2 }}>{logoLabel}</div>
           </div>
         </div>
-        {userLabel && <div style={{ fontSize:11, color:"rgba(255,255,255,.3)", padding:"6px 20px 12px", letterSpacing:.3 }}>{userLabel}</div>}
+        {userLabel && <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", padding:"6px 20px 12px", letterSpacing:.3 }}>{userLabel}</div>}
         <nav style={{ flex:1, display:"flex", flexDirection:"column", padding:"4px 12px", gap:2 }}>
           {nav.map(({ label, path: np, Icon }) => (
             <button key={np} className={`hl-nav-item${path === np ? " hl-nav-active" : ""}`} onClick={() => navigate(np)}>
-              <Icon size={16} color={path === np ? "#fff" : "rgba(255,255,255,.5)"}/>
+              <Icon size={16} color={path === np ? "#fff" : "rgba(255,255,255,.6)"}/>
               <span>{label}</span>
             </button>
           ))}
