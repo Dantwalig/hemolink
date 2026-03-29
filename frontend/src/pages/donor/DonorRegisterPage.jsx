@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
 import LanguageSwitcher from "../../utils/LanguageSwitcher.jsx";
 import { useLang } from "../../utils/LangContext.jsx";
+import { getCoordinates } from "../../utils/geolocation";
 
 const validators = {
  fullName(value) {
@@ -108,16 +109,17 @@ export default function DonorRegisterPage() {
 
  const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
- const getLocation = () => {
-  if (!navigator.geolocation) { setLocationStatus("denied"); return; }
+ const getLocation = async () => {
   setLocationStatus("loading");
-  navigator.geolocation.getCurrentPosition(
-   (pos) => {
-    setForm((f) => ({ ...f, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
-    setLocationStatus("granted");
-   },
-   () => setLocationStatus("denied")
-  );
+  try {
+   const coords = await getCoordinates();
+   setForm((f) => ({ ...f, latitude: coords.latitude, longitude: coords.longitude }));
+   setLocationStatus(coords.source === "gps" ? "granted" : "granted-ip");
+   setErrors((e) => ({ ...e, location: "" }));
+  } catch (err) {
+   if (err.code === 1) setLocationStatus("denied");
+   else setLocationStatus("unavailable");
+  }
  };
 
  const set = (field, val) => {
@@ -141,7 +143,7 @@ export default function DonorRegisterPage() {
  const validateStep1 = () => {
   const fields = ["fullName", "phone", "bloodType"];
   const errs  = Object.fromEntries(fields.map((f) => [f, validators[f]?.(form[f]) ?? ""]));
-  if (locationStatus !== "granted") errs.location = "Please share your location to continue.";
+  if (locationStatus !== "granted" && locationStatus !== "granted-ip") errs.location = "Please share your location to continue.";
   setErrors((e) => ({ ...e, ...errs }));
   setTouched((t) => ({ ...t, ...Object.fromEntries(fields.map((f) => [f, true])), location: true }));
   return !Object.values(errs).some(Boolean);
@@ -281,15 +283,17 @@ export default function DonorRegisterPage() {
          <div style={styles.availLabel}>Share your location<span style={styles.required}> *</span></div>
          <div style={styles.availSub}>
           {locationStatus === "idle"  && "Required so hospitals can find nearby donors."}
-          {locationStatus === "loading" && "Getting your location…"}
+          {locationStatus === "loading" && "Getting your location..."}
           {locationStatus === "granted" && `Location saved (${form.latitude?.toFixed(4)}, ${form.longitude?.toFixed(4)})`}
-          {locationStatus === "denied" && "Location denied. Please enable browser location access."}
+          {locationStatus === "granted-ip" && `Approximate location saved (${form.latitude?.toFixed(4)}, ${form.longitude?.toFixed(4)})`}
+          {locationStatus === "denied" && "Location permission denied. Please enable it in your browser settings."}
+          {locationStatus === "unavailable" && "Could not detect location. Please try again."}
          </div>
          {touched.location && errors.location && (
           <span style={{ ...styles.errorMsg, display: "block", marginTop: 4 }}>{errors.location}</span>
          )}
         </div>
-        {locationStatus !== "granted" && (
+        {locationStatus !== "granted" && locationStatus !== "granted-ip" && (
          <button type="button"
           style={{ ...styles.btnOutline, marginTop: 0, padding: "8px 16px", fontSize: 13 }}
           onClick={getLocation} disabled={locationStatus === "loading"}>
